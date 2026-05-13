@@ -79,7 +79,11 @@ html[data-theme="light"] {
 }
 
 * {
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 body {
@@ -390,4 +394,3 @@ body {
 .shadow-black\/30 {
   box-shadow: 0 25px 65px rgba(0, 0, 0, 0.15) !important;
 }
-

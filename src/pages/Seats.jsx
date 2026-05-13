@@ -350,7 +350,7 @@ export default function Seats() {
                   <div className="w-6 text-xs font-semibold text-white/50">
                     {String.fromCharCode(65 + r)}
                   </div>
-                  <div className="grid flex-1 grid-cols-[repeat(14,minmax(0,1fr))] gap-1.5">
+                  <div className="grid flex-1 grid-cols-14 gap-1.5">
                     {Array.from({ length: 14 }).map((__, c) => {
                       const id = getSeatId(r, c);
                       const isOccupied = occupied.has(id);

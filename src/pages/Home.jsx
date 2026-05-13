@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import Footer from "../components/Footer.jsx";
 import LocationPicker from "../components/LocationPicker.jsx";
 import MovieCard from "../components/MovieCard.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -626,8 +625,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

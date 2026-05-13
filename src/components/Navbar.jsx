@@ -12,10 +12,29 @@ const navItems = [
   { label: "Contact", to: "/contact" },
 ];
 
+function ThemeToggleButton() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white transition hover:bg-white/10"
+    >
+      <span className="inline-flex items-center gap-1.5">
+        {theme === "dark" ? (
+          <Sun className="h-4 w-4" />
+        ) : (
+          <Moon className="h-4 w-4" />
+        )}
+        {theme === "dark" ? "Light" : "Dark"}
+      </span>
+    </button>
+  );
+}
+
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { theme, toggleTheme } = useContext(ThemeContext);
 
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
@@ -85,20 +104,7 @@ export default function Navbar() {
 
           <div className="hidden items-center gap-3 md:flex">
             <LocationPicker compact />
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white transition hover:bg-white/10"
-            >
-              <span className="inline-flex items-center gap-1.5">
-                {theme === "dark" ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-                {theme === "dark" ? "Light" : "Dark"}
-              </span>
-            </button>
+            <ThemeToggleButton />
             <NavLink
               to={isLoggedIn ? "/profile" : "/login"}
               className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-slate-950"
@@ -130,20 +136,7 @@ export default function Navbar() {
               <div>
                 <span className="text-sm font-semibold text-white">Menu</span>
               </div>
-              <button
-                type="button"
-                className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white transition hover:bg-white/10"
-                onClick={toggleTheme}
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  {theme === "dark" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                  {theme === "dark" ? "Light" : "Dark"}
-                </span>
-              </button>
+              <ThemeToggleButton />
             </div>
             <form
               onSubmit={(e) => {

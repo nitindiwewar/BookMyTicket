@@ -27,6 +27,7 @@ import {
 
 import { useAuth } from "../state/authContext.jsx";
 import { ThemeContext } from "../state/themeContext.jsx";
+import LoadingOrEmpty from "../components/LoadingOrEmpty.jsx";
 
 const TAB_ITEMS = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
@@ -289,36 +290,43 @@ export default function Profile() {
                   <div className="space-y-6">
                     {/* Stats */}
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                      {isLoading
-                        ? Array.from({ length: 5 }).map((_, i) => (
+                      <LoadingOrEmpty
+                        isLoading={isLoading}
+                        isEmpty={false}
+                        loadingContent={Array.from({ length: 5 }).map(
+                          (_, i) => (
                             <Skeleton key={i} className="h-28" />
-                          ))
-                        : quickStats.map((s) => {
-                            const Icon = s.icon;
-                            return (
-                              <div
-                                key={s.label}
-                                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4"
-                              >
-                                <div className="absolute inset-0 -translate-y-6 opacity-0 transition group-hover:opacity-100 group-hover:translate-y-0">
-                                  <div className="h-28 w-full bg-linear-to-r from-white/5 via-transparent to-white/5" />
+                          ),
+                        )}
+                        emptyContent={null}
+                      >
+                        {quickStats.map((s) => {
+                          const Icon = s.icon;
+                          return (
+                            <div
+                              key={s.label}
+                              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4"
+                            >
+                              <div className="absolute inset-0 -translate-y-6 opacity-0 transition group-hover:opacity-100 group-hover:translate-y-0">
+                                <div className="h-28 w-full bg-linear-to-r from-white/5 via-transparent to-white/5" />
+                              </div>
+                              <div className="relative">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="text-xs font-semibold text-white/70">
+                                    {s.label}
+                                  </div>
+                                  <div className="rounded-xl border border-white/10 bg-black/20 p-2">
+                                    <Icon className="h-4 w-4 text-white/80" />
+                                  </div>
                                 </div>
-                                <div className="relative">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <div className="text-xs font-semibold text-white/70">
-                                      {s.label}
-                                    </div>
-                                    <div className="rounded-xl border border-white/10 bg-black/20 p-2">
-                                      <Icon className="h-4 w-4 text-white/80" />
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 text-xl font-bold text-white">
-                                    {s.value}
-                                  </div>
+                                <div className="mt-2 text-xl font-bold text-white">
+                                  {s.value}
                                 </div>
                               </div>
-                            );
-                          })}
+                            </div>
+                          );
+                        })}
+                      </LoadingOrEmpty>
                     </div>
 
                     {/* Upcoming */}
@@ -342,34 +350,41 @@ export default function Profile() {
                       </div>
 
                       <div className="mt-4">
-                        {isLoading ? (
-                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                              <Skeleton key={i} className="h-36" />
-                            ))}
-                          </div>
-                        ) : empty ? (
-                          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                              <CalendarDays className="h-5 w-5 text-white/80" />
+                        <LoadingOrEmpty
+                          isLoading={isLoading}
+                          isEmpty={empty}
+                          loadingContent={
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              {Array.from({ length: 3 }).map((_, i) => (
+                                <Skeleton key={i} className="h-36" />
+                              ))}
                             </div>
-                            <div className="mt-3 text-sm font-semibold text-white">
-                              No upcoming bookings
+                          }
+                          emptyContent={
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                                <CalendarDays className="h-5 w-5 text-white/80" />
+                              </div>
+                              <div className="mt-3 text-sm font-semibold text-white">
+                                No upcoming bookings
+                              </div>
+                              <div className="mt-1 text-sm text-white/60">
+                                Book tickets to see your upcoming shows here.
+                              </div>
+                              <div className="mt-4 flex justify-center">
+                                <a
+                                  href="/booking"
+                                  className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                                >
+                                  <Play className="h-4 w-4" />
+                                  Book now
+                                </a>
+                              </div>
                             </div>
-                            <div className="mt-1 text-sm text-white/60">
-                              Book tickets to see your upcoming shows here.
-                            </div>
-                            <div className="mt-4 flex justify-center">
-                              <a
-                                href="/booking"
-                                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
-                              >
-                                <Play className="h-4 w-4" />
-                                Book now
-                              </a>
-                            </div>
-                          </div>
-                        ) : null}
+                          }
+                        >
+                          {null}
+                        </LoadingOrEmpty>
                       </div>
                     </GlassCard>
 
@@ -393,28 +408,35 @@ export default function Profile() {
                         </button>
                       </div>
 
-                      {empty ? (
-                        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                            <Watch className="h-5 w-5 text-white/80" />
+                      <LoadingOrEmpty
+                        isLoading={false}
+                        isEmpty={empty}
+                        loadingContent={null}
+                        emptyContent={
+                          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                              <Watch className="h-5 w-5 text-white/80" />
+                            </div>
+                            <div className="mt-3 text-sm font-semibold text-white">
+                              Watchlist is empty
+                            </div>
+                            <div className="mt-1 text-sm text-white/60">
+                              Add movies to your watchlist to see them here.
+                            </div>
+                            <div className="mt-4 flex justify-center">
+                              <a
+                                href="/movies"
+                                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                              >
+                                <Search className="h-4 w-4" />
+                                Browse movies
+                              </a>
+                            </div>
                           </div>
-                          <div className="mt-3 text-sm font-semibold text-white">
-                            Watchlist is empty
-                          </div>
-                          <div className="mt-1 text-sm text-white/60">
-                            Add movies to your watchlist to see them here.
-                          </div>
-                          <div className="mt-4 flex justify-center">
-                            <a
-                              href="/movies"
-                              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
-                            >
-                              <Search className="h-4 w-4" />
-                              Browse movies
-                            </a>
-                          </div>
-                        </div>
-                      ) : null}
+                        }
+                      >
+                        {null}
+                      </LoadingOrEmpty>
                     </GlassCard>
                   </div>
                 )}
@@ -433,25 +455,32 @@ export default function Profile() {
                         </div>
                       </div>
 
-                      {isLoading ? (
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <Skeleton key={i} className="h-44" />
-                          ))}
-                        </div>
-                      ) : empty ? (
-                        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                            <CalendarDays className="h-5 w-5 text-white/80" />
+                      <LoadingOrEmpty
+                        isLoading={isLoading}
+                        isEmpty={empty}
+                        loadingContent={
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                              <Skeleton key={i} className="h-44" />
+                            ))}
                           </div>
-                          <div className="mt-3 text-sm font-semibold text-white">
-                            Nothing scheduled
+                        }
+                        emptyContent={
+                          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                              <CalendarDays className="h-5 w-5 text-white/80" />
+                            </div>
+                            <div className="mt-3 text-sm font-semibold text-white">
+                              Nothing scheduled
+                            </div>
+                            <div className="mt-1 text-sm text-white/60">
+                              Your upcoming tickets will appear once you book.
+                            </div>
                           </div>
-                          <div className="mt-1 text-sm text-white/60">
-                            Your upcoming tickets will appear once you book.
-                          </div>
-                        </div>
-                      ) : null}
+                        }
+                      >
+                        {null}
+                      </LoadingOrEmpty>
                     </GlassCard>
                   </div>
                 )}
@@ -469,25 +498,32 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {isLoading ? (
-                      <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <Skeleton key={i} className="min-w-260px h-44" />
-                        ))}
-                      </div>
-                    ) : empty ? (
-                      <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                          <History className="h-5 w-5 text-white/80" />
+                    <LoadingOrEmpty
+                      isLoading={isLoading}
+                      isEmpty={empty}
+                      loadingContent={
+                        <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <Skeleton key={i} className="min-w-260px h-44" />
+                          ))}
                         </div>
-                        <div className="mt-3 text-sm font-semibold text-white">
-                          No history yet
+                      }
+                      emptyContent={
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                            <History className="h-5 w-5 text-white/80" />
+                          </div>
+                          <div className="mt-3 text-sm font-semibold text-white">
+                            No history yet
+                          </div>
+                          <div className="mt-1 text-sm text-white/60">
+                            Book tickets to start building your history.
+                          </div>
                         </div>
-                        <div className="mt-1 text-sm text-white/60">
-                          Book tickets to start building your history.
-                        </div>
-                      </div>
-                    ) : null}
+                      }
+                    >
+                      {null}
+                    </LoadingOrEmpty>
                   </GlassCard>
                 )}
 
@@ -504,34 +540,41 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {isLoading ? (
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <Skeleton key={i} className="h-40" />
-                        ))}
-                      </div>
-                    ) : empty ? (
-                      <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                          <Watch className="h-5 w-5 text-white/80" />
+                    <LoadingOrEmpty
+                      isLoading={isLoading}
+                      isEmpty={empty}
+                      loadingContent={
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <Skeleton key={i} className="h-40" />
+                          ))}
                         </div>
-                        <div className="mt-3 text-sm font-semibold text-white">
-                          Watchlist is empty
+                      }
+                      emptyContent={
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                            <Watch className="h-5 w-5 text-white/80" />
+                          </div>
+                          <div className="mt-3 text-sm font-semibold text-white">
+                            Watchlist is empty
+                          </div>
+                          <div className="mt-1 text-sm text-white/60">
+                            Add movies to watch later.
+                          </div>
+                          <div className="mt-4 flex justify-center">
+                            <a
+                              href="/movies"
+                              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                            >
+                              <Search className="h-4 w-4" />
+                              Browse
+                            </a>
+                          </div>
                         </div>
-                        <div className="mt-1 text-sm text-white/60">
-                          Add movies to watch later.
-                        </div>
-                        <div className="mt-4 flex justify-center">
-                          <a
-                            href="/movies"
-                            className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
-                          >
-                            <Search className="h-4 w-4" />
-                            Browse
-                          </a>
-                        </div>
-                      </div>
-                    ) : null}
+                      }
+                    >
+                      {null}
+                    </LoadingOrEmpty>
                   </GlassCard>
                 )}
 
@@ -548,25 +591,32 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {isLoading ? (
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                          <Skeleton key={i} className="h-36" />
-                        ))}
-                      </div>
-                    ) : empty ? (
-                      <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                          <Wallet className="h-5 w-5 text-white/80" />
+                    <LoadingOrEmpty
+                      isLoading={isLoading}
+                      isEmpty={empty}
+                      loadingContent={
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="h-36" />
+                          ))}
                         </div>
-                        <div className="mt-3 text-sm font-semibold text-white">
-                          No payment methods saved
+                      }
+                      emptyContent={
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                            <Wallet className="h-5 w-5 text-white/80" />
+                          </div>
+                          <div className="mt-3 text-sm font-semibold text-white">
+                            No payment methods saved
+                          </div>
+                          <div className="mt-1 text-sm text-white/60">
+                            Add a card or UPI to speed up checkout.
+                          </div>
                         </div>
-                        <div className="mt-1 text-sm text-white/60">
-                          Add a card or UPI to speed up checkout.
-                        </div>
-                      </div>
-                    ) : null}
+                      }
+                    >
+                      {null}
+                    </LoadingOrEmpty>
                   </GlassCard>
                 )}
 
@@ -583,25 +633,32 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {isLoading ? (
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <Skeleton key={i} className="h-32" />
-                        ))}
-                      </div>
-                    ) : empty ? (
-                      <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                          <Gift className="h-5 w-5 text-white/80" />
+                    <LoadingOrEmpty
+                      isLoading={isLoading}
+                      isEmpty={empty}
+                      loadingContent={
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <Skeleton key={i} className="h-32" />
+                          ))}
                         </div>
-                        <div className="mt-3 text-sm font-semibold text-white">
-                          No offers available
+                      }
+                      emptyContent={
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                            <Gift className="h-5 w-5 text-white/80" />
+                          </div>
+                          <div className="mt-3 text-sm font-semibold text-white">
+                            No offers available
+                          </div>
+                          <div className="mt-1 text-sm text-white/60">
+                            Your rewards will show here.
+                          </div>
                         </div>
-                        <div className="mt-1 text-sm text-white/60">
-                          Your rewards will show here.
-                        </div>
-                      </div>
-                    ) : null}
+                      }
+                    >
+                      {null}
+                    </LoadingOrEmpty>
                   </GlassCard>
                 )}
 
