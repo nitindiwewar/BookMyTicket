@@ -1,99 +1,81 @@
 export const theaters = [
   {
-    id: "t1",
-    name: "CineHaus Downtown",
-    area: "City Center",
-    facilities: ["Dolby", "Parking", "Cafe", "Wheelchair"],
+    id: 'aurora-imax',
+    name: 'Aurora IMAX',
+    city: 'New York',
+    area: 'Downtown',
+    rating: 4.8,
+    screens: 9,
+    amenities: ['IMAX', 'Dolby Atmos', 'Recliners', 'Valet'],
+    accent: '#7c3aed',
   },
   {
-    id: "t2",
-    name: "Silver Screen Mall",
-    area: "North Mall",
-    facilities: ["IMAX", "Food Court", "Parking"],
+    id: 'velvet-screen',
+    name: 'Velvet Screen Cinemas',
+    city: 'Los Angeles',
+    area: 'Sunset Blvd',
+    rating: 4.6,
+    screens: 7,
+    amenities: ['4DX', 'Bar & Lounge', 'Premium', 'Parking'],
+    accent: '#e11d48',
   },
   {
-    id: "t3",
-    name: "Noir Multiplex",
-    area: "Riverside",
-    facilities: ["4DX", "Recliners", "Cafe"],
+    id: 'royal-picture-house',
+    name: 'Royal Picture House',
+    city: 'London',
+    area: 'Soho',
+    rating: 4.7,
+    screens: 6,
+    amenities: ['Dolby Atmos', 'Heritage Hall', 'Café'],
+    accent: '#0ea5e9',
   },
-];
+  {
+    id: 'galaxy-multiplex',
+    name: 'Galaxy Multiplex',
+    city: 'Mumbai',
+    area: 'Bandra',
+    rating: 4.5,
+    screens: 11,
+    amenities: ['IMAX', '4DX', 'Recliners', 'Food Court'],
+    accent: '#f5b942',
+  },
+  {
+    id: 'sakura-cinema',
+    name: 'Sakura Cinema',
+    city: 'Tokyo',
+    area: 'Shibuya',
+    rating: 4.9,
+    screens: 8,
+    amenities: ['IMAX', 'Laser Projection', 'Pods'],
+    accent: '#f9a8d4',
+  },
+  {
+    id: 'lumiere-pavilion',
+    name: 'Lumière Pavilion',
+    city: 'Paris',
+    area: 'Le Marais',
+    rating: 4.7,
+    screens: 5,
+    amenities: ['Dolby Vision', 'Champagne Bar', 'Premium'],
+    accent: '#a855f7',
+  },
+]
 
-export const shows = [
-  // movieId m1
-  {
-    id: "s1",
-    movieId: "m1",
-    theaterId: "t1",
-    date: "2026-05-12",
-    time: "10:30",
-  },
-  {
-    id: "s2",
-    movieId: "m1",
-    theaterId: "t1",
-    date: "2026-05-12",
-    time: "19:30",
-  },
-  {
-    id: "s3",
-    movieId: "m1",
-    theaterId: "t2",
-    date: "2026-05-12",
-    time: "21:15",
-  },
-  // movieId m2
-  {
-    id: "s4",
-    movieId: "m2",
-    theaterId: "t2",
-    date: "2026-05-07",
-    time: "11:15",
-  },
-  {
-    id: "s5",
-    movieId: "m2",
-    theaterId: "t3",
-    date: "2026-05-07",
-    time: "18:00",
-  },
-  // movieId m3
-  {
-    id: "s6",
-    movieId: "m3",
-    theaterId: "t1",
-    date: "2026-05-08",
-    time: "20:00",
-  },
-  // movieId m4
-  {
-    id: "s7",
-    movieId: "m4",
-    theaterId: "t3",
-    date: "2026-05-12",
-    time: "16:45",
-  },
+export const getTheaterById = (id) => theaters.find((t) => t.id === id)
 
-  // movieId m11 (Now Showing)
-  {
-    id: "s8",
-    movieId: "m11",
-    theaterId: "t1",
-    date: "2026-05-12",
-    time: "12:00",
-  },
-  {
-    id: "s9",
-    movieId: "m11",
-    theaterId: "t2",
-    date: "2026-05-12",
-    time: "15:30",
-  },
-  {
-    id: "s10",
-    movieId: "m11",
-    theaterId: "t3",
-    date: "2026-05-12",
-    time: "21:00",
-  },
-];
+const TIMES = ['10:15 AM', '01:30 PM', '04:45 PM', '07:30 PM', '10:45 PM']
+
+// Deterministic showtimes for a movie across theaters in its city pool.
+export function getShowtimes(movie) {
+  if (!movie) return []
+  return theaters.slice(0, 4).map((theater) => ({
+    theater,
+    shows: TIMES.map((time, i) => ({
+      id: `${theater.id}-${time}`.replace(/[^a-z0-9]/gi, '-'),
+      time,
+      format: movie.formats[i % movie.formats.length],
+      price: 12 + (i % 3) * 4,
+      fillRate: [0.3, 0.55, 0.7, 0.85, 0.45][i],
+    })),
+  }))
+}

@@ -1,107 +1,82 @@
-import { memo, useState } from "react";
-import { Link } from "react-router-dom";
-import Button from "./ui/Button.jsx";
-import Card from "./ui/Card.jsx";
-import { formatRating } from "../utils/formatters.js";
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Star, Clock, Heart, Play } from 'lucide-react'
+import Poster from './ui/Poster'
+import { useApp } from '../context/AppContext'
+import { formatRuntime, formatDate, cx } from '../lib/format'
 
-function formatVotes(votes) {
-  if (!votes) return "—";
-  if (votes >= 100000) return `${(votes / 1000).toFixed(1)}K`;
-  if (votes >= 1000) return `${(votes / 1000).toFixed(1)}K`;
-  return String(votes);
-}
-
-/**
- * MovieCard component for displaying movie information
- * Enhanced with loading states, error handling, and improved styling
- * @component
- * @param {Object} props
- * @param {Object} props.movie - Movie data object
- * @returns {JSX.Element}
- */
-function MovieCard({ movie }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  const posterSrc = movie.hero?.poster;
-  const fallbackPoster =
-    "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=600&fit=crop";
-  const displaySrc = imageError ? fallbackPoster : posterSrc || fallbackPoster;
-
-  const title = movie.title ?? "Untitled movie";
-  const genreText = movie.genre?.join(" / ") ?? "";
+export default function MovieCard({ movie, index = 0 }) {
+  const { state, toggleFavorite } = useApp()
+  const isFav = state.favorites.includes(movie.id)
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:border-white/20 hover:-translate-y-1 flex flex-col">
-      <Link to={`/movies/${movie.id}`} className="block">
-        <div className="relative aspect-2/3 overflow-hidden rounded-lg">
-          {/* Shimmer loading effect */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-linear-to-r from-white/5 via-white/10 to-white/5 animate-shimmer z-20" />
-          )}
-
-          <img
-            src={displaySrc}
-            alt={`${title} poster`}
-            className={`h-full w-full object-cover transition-all duration-700 group-hover:scale-105 ${
-              imageLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            loading="lazy"
-            decoding="async"
-            width="400"
-            height="600"
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              setImageError(true);
-              setImageLoaded(true);
-            }}
-          />
-        </div>
-      </Link>
-
-      {/* Title Section */}
-      <div className="flex-1 flex flex-col p-3 gap-2">
-        <Link to={`/movies/${movie.id}`}>
-          <div className="text-base font-bold text-white leading-snug hover:text-white/80 transition-colors line-clamp-2">
-            {title}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.4) }}
+      className="group relative"
+    >
+      <div className="glass-card overflow-hidden transition-all duration-300 group-hover:border-cinema-purple-glow/50 group-hover:shadow-glow">
+        <div className="relative aspect-[2/3] overflow-hidden">
+          <div className="h-full w-full transition-transform duration-500 group-hover:scale-105">
+            <Poster movie={movie} showTitle={false} />
           </div>
-        </Link>
 
-        <div className="text-xs text-white/70">{genreText || "Unknown"}</div>
-      </div>
+          {/* top badges */}
+          <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+            <span className="chip bg-black/50 backdrop-blur text-cinema-gold">
+              <Star size={12} className="fill-cinema-gold" />
+              {movie.rating}
+            </span>
+            <button
+              onClick={() => toggleFavorite(movie.id)}
+              aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+              className={cx(
+                'grid h-8 w-8 place-items-center rounded-full border border-white/10 backdrop-blur transition',
+                isFav ? 'bg-cinema-red text-white' : 'bg-black/50 text-white/80 hover:bg-black/70',
+              )}
+            >
+              <Heart size={15} className={isFav ? 'fill-white' : ''} />
+            </button>
+          </div>
 
-      {/* Bottom rating bar */}
-      <div className="flex items-center justify-between gap-2 p-3 border-t border-white/10 bg-white/0.03">
-        <div className="flex items-center gap-2">
-          <svg
-            className="w-4 h-4 text-yellow-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
+          {/* hover overlay */}
+          <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black via-black/40 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="flex flex-wrap gap-1.5">
+              {movie.formats.slice(0, 3).map((f) => (
+                <span key={f} className="chip border-white/20 bg-white/10 text-[10px]">
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2 p-4">
+          <h3 className="truncate font-display text-base font-semibold text-white">{movie.title}</h3>
+          <p className="truncate text-xs text-slate-400">
+            {movie.genres.join(' · ')}
+          </p>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <span className="inline-flex items-center gap-1">
+              <Clock size={12} /> {formatRuntime(movie.duration)}
+            </span>
+            <span>{movie.language}</span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            {movie.upcoming ? 'Releasing ' : 'In cinemas · '}
+            {formatDate(movie.releaseDate)}
+          </p>
+
+          <Link
+            to={`/movies/${movie.id}`}
+            className={cx('btn w-full', movie.upcoming ? 'btn-outline' : 'btn-primary')}
           >
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-          <div className="flex items-center gap-1 text-xs">
-            <span className="font-bold text-yellow-400">
-              {formatRating(movie.rating)}
-            </span>
-            <span className="text-white/50">
-              {formatVotes(movie.votes)} Votes
-            </span>
-          </div>
+            {movie.upcoming ? 'View Details' : (<><Play size={15} /> Book Now</>)}
+          </Link>
         </div>
-
-        <Button
-          as={Link}
-          to={`/movies/${movie.id}`}
-          size="sm"
-          variant="subtle"
-          className="py-1 px-2 text-10px hover:bg-white/15"
-        >
-          Book
-        </Button>
       </div>
-    </Card>
-  );
+    </motion.div>
+  )
 }
-
-export default memo(MovieCard);
