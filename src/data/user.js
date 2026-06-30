@@ -1,0 +1,56 @@
+export const currentUser = {
+  id: 'u-001',
+  name: 'Alex Rivera',
+  email: 'alex.rivera@cineverse.app',
+  phone: '+1 (555) 014-2200',
+  city: 'New York',
+  memberSince: '2023-04-11',
+  tier: 'Gold',
+  rewardPoints: 2480,
+  avatar: { from: '#7c3aed', to: '#e11d48', initials: 'AR' },
+  savedCards: [
+    { id: 'c1', brand: 'Visa', last4: '4242', expiry: '08/27' },
+    { id: 'c2', brand: 'Mastercard', last4: '5588', expiry: '11/26' },
+  ],
+  notifications: [
+    { id: 'n1', text: 'Your booking for Nebula Protocol is confirmed.', time: '2h ago', unread: true },
+    { id: 'n2', text: 'New offer: 20% off IMAX this weekend.', time: '1d ago', unread: true },
+    { id: 'n3', text: 'You earned 120 reward points.', time: '3d ago', unread: false },
+  ],
+}
+
+export const bookingHistory = [
+  {
+    id: 'CV-7F3K9A',
+    movieId: 'monsoon-melody',
+    theaterId: 'aurora-imax',
+    date: '2026-06-12',
+    time: '07:30 PM',
+    format: 'IMAX',
+    seats: ['H7', 'H8'],
+    total: 64.5,
+    status: 'Completed',
+  },
+  {
+    id: 'CV-2B8M1Q',
+    movieId: 'midnight-tokyo',
+    theaterId: 'velvet-screen',
+    date: '2026-05-28',
+    time: '10:45 PM',
+    format: '2D',
+    seats: ['D4', 'D5', 'D6'],
+    total: 41.0,
+    status: 'Completed',
+  },
+  {
+    id: 'CV-9X4P2L',
+    movieId: 'crimson-vale',
+    theaterId: 'galaxy-multiplex',
+    date: '2026-07-04',
+    time: '04:45 PM',
+    format: '3D',
+    seats: ['K10', 'K11'],
+    total: 58.0,
+    status: 'Upcoming',
+  },
+]
