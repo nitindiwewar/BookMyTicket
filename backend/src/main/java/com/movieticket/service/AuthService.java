@@ -29,7 +29,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
-    // In-memory OTP storage mapping mobile -> active OTP
     private final Map<String, String> otpStore = new ConcurrentHashMap<>();
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
@@ -44,11 +43,9 @@ public class AuthService {
         }
 
         String mobile = request.getMobile().trim();
-        // Generate random 6-digit OTP
         int number = random.nextInt(900000) + 100000;
         String otp = String.valueOf(number);
 
-        // Store OTP for validation
         otpStore.put(mobile, otp);
 
         log.info("[SMS GATEWAY SIMULATOR] Sent OTP code {} to mobile number {}{}", otp, request.getCountryCode(), mobile);
@@ -68,13 +65,11 @@ public class AuthService {
         String mobile = request.getMobile().trim();
         String storedOtp = otpStore.get(mobile);
 
-        // Allow generated OTP or 123456 demo fallback
         boolean isValid = (storedOtp != null && storedOtp.equals(request.getOtp())) || "123456".equals(request.getOtp());
         if (!isValid) {
             throw new BadRequestException("Invalid OTP code. Please check and try again.");
         }
 
-        // Clean up OTP after successful verification
         otpStore.remove(mobile);
 
         List<User> users = userRepository.findAllByMobile(mobile);
@@ -83,11 +78,14 @@ public class AuthService {
 
         if (!users.isEmpty()) {
             user = users.get(0);
+            if (user.getName() == null || user.getName().trim().isEmpty() || user.getName().startsWith("User_")) {
+                isNewUser = true;
+            }
         } else {
             isNewUser = true;
             user = User.builder()
-                    .name("User_" + mobile.substring(Math.max(0, mobile.length() - 4)))
-                    .email("user_" + mobile + "@movieticket.com")
+                    .name(null)
+                    .email(null)
                     .password(passwordEncoder.encode("otp_authenticated"))
                     .mobile(mobile)
                     .countryCode(request.getCountryCode() != null ? request.getCountryCode() : "+91")
@@ -96,7 +94,7 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
+        String token = jwtUtils.generateToken(user.getEmail() != null ? user.getEmail() : user.getMobile());
 
         return AuthDTO.AuthResponse.builder()
                 .token(token)
@@ -149,11 +147,10 @@ public class AuthService {
                 .build();
     }
 
-
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email is already in use");
+            throw new BadRequestException("Email address is already registered.");
         }
 
         User user = User.builder()
@@ -162,6 +159,9 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .mobile(request.getMobile())
                 .countryCode(request.getCountryCode() != null ? request.getCountryCode() : "+91")
+                .dob(request.getDob())
+                .age(request.getAge())
+                .gender(request.getGender())
                 .role(User.Role.ROLE_USER)
                 .build();
 
@@ -177,17 +177,20 @@ public class AuthService {
                 .email(user.getEmail())
                 .mobile(user.getMobile())
                 .countryCode(user.getCountryCode())
+                .dob(user.getDob())
+                .age(user.getAge())
+                .gender(user.getGender())
                 .role(user.getRole().name())
                 .isNewUser(false)
                 .build();
     }
 
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
+        User user = userRepository.findFirstByEmailOrderByCreatedAtDesc(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("Invalid email or password."));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadRequestException("Invalid email or password");
+            throw new BadRequestException("Invalid email or password.");
         }
 
         String token = jwtUtils.generateToken(user.getEmail());
@@ -200,13 +203,16 @@ public class AuthService {
                 .email(user.getEmail())
                 .mobile(user.getMobile())
                 .countryCode(user.getCountryCode())
+                .dob(user.getDob())
+                .age(user.getAge())
+                .gender(user.getGender())
                 .role(user.getRole().name())
                 .isNewUser(false)
                 .build();
     }
 
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findFirstByEmailOrderByCreatedAtDesc(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
     }
 }

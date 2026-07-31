@@ -45,25 +45,15 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedUsers() {
         if (userRepository.count() == 0) {
-            User demoUser = User.builder()
-                    .name("Aarav Sharma")
-                    .email("aarav@example.com")
-                    .password(passwordEncoder.encode("password123"))
-                    .mobile("9876543210")
-                    .countryCode("+91")
-                    .role(User.Role.ROLE_USER)
-                    .build();
-
             User adminUser = User.builder()
                     .name("Admin User")
                     .email("admin@movieticket.com")
                     .password(passwordEncoder.encode("admin123"))
                     .mobile("9999988888")
                     .countryCode("+91")
-                    .role(User.Role.ROLE_ADMIN)
+                    .role(User.Role.ROLE_USER)
                     .build();
-
-            userRepository.saveAll(List.of(demoUser, adminUser));
+            userRepository.save(adminUser);
         }
     }
 

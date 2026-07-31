@@ -140,24 +140,22 @@ export default function Payment() {
     }
   };
 
-  const { isLoggedIn, userData } = useAuth();
+  const { isLoggedIn, userData, openLoginModal } = useAuth();
 
   useEffect(() => {
     if (!isLoggedIn) {
-      alert("Please log in first to complete ticket payment.");
-      navigate("/login", { state: { from: location.pathname } });
+      openLoginModal();
     }
-  }, [isLoggedIn, navigate, location.pathname]);
+  }, [isLoggedIn, openLoginModal]);
 
   const handlePay = async () => {
-    if (!isLoggedIn) {
-      alert("Please log in first to complete ticket booking.");
-      navigate("/login", { state: { from: location.pathname } });
+    if (!isLoggedIn || !userData) {
+      openLoginModal();
       return;
     }
     setIsProcessing(true);
-    const email = userData?.email || "user@example.com";
-    const phone = userData?.mobile ? `${userData.mobile}` : "9876543210";
+    const email = userData.email || "";
+    const phone = userData.mobile || "";
 
 
     const processFinalBooking = async (rzpDetails = {}) => {

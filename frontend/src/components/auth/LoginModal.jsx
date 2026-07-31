@@ -1,17 +1,24 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, CheckCircle2, Ticket, Sparkles, ShieldCheck, Utensils, Smartphone } from "lucide-react";
+import { X, ArrowRight, CheckCircle2, Ticket, Sparkles, Utensils, Smartphone, User, Mail, Calendar, UserCheck } from "lucide-react";
 import { useAuth } from "../../state/authContext.jsx";
 import MobileInput from "./MobileInput.jsx";
 import LoadingButton from "./LoadingButton.jsx";
 
 export default function LoginModal() {
-  const { isLoginModalOpen, closeLoginModal, sendOtp, verifyOtp, login } = useAuth();
+  const { isLoginModalOpen, closeLoginModal, sendOtp, verifyOtp, completeProfile } = useAuth();
   
-  const [step, setStep] = useState("mobile"); // 'mobile' | 'otp'
+  const [step, setStep] = useState("mobile"); // 'mobile' | 'otp' | 'details'
   const [countryCode, setCountryCode] = useState("+91");
   const [mobile, setMobile] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  
+  // Profile Details State for New Users
+  const [fullName, setFullName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [dob, setDob] = useState("");
+  const [gender, setGender] = useState("Male");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,13 +44,11 @@ export default function LoginModal() {
     setError("");
 
     try {
-      const res = await sendOtp(mobile, countryCode);
-      const code = res?.otp || "369547";
-      setOtpDigits(code.split("").slice(0, 6));
+      await sendOtp(mobile, countryCode);
+      setOtpDigits(["", "", "", "", "", ""]);
       setStep("otp");
-    } catch {
-      setOtpDigits(["3", "6", "9", "5", "4", "7"]);
-      setStep("otp");
+    } catch (err) {
+      setError(err.message || "Failed to send OTP code. Please check your network.");
     } finally {
       setLoading(false);
     }
@@ -79,18 +84,51 @@ export default function LoginModal() {
     setError("");
 
     try {
-      await verifyOtp(mobile, countryCode, fullOtp);
-      closeLoginModal();
-      resetForm();
-    } catch {
-      login({
-        name: "Aarav Sharma",
-        email: "aarav@example.com",
-        mobile: mobile || "9876543210",
-        countryCode: countryCode || "+91",
+      const res = await verifyOtp(mobile, countryCode, fullOtp);
+      // Check database response: if new user or missing name/email -> ask for details
+      if (res?.isNewUser || res?.newUser || !res?.name || res?.name?.startsWith("User_") || !res?.email || res?.email.includes("@movieticket.com")) {
+        setFullName("");
+        setUserEmail("");
+        setStep("details");
+      } else {
+        // User exists in database with valid profile -> log in directly!
+        closeLoginModal();
+        resetForm();
+      }
+    } catch (err) {
+      setError(err.message || "Invalid OTP code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveDetails = async (e) => {
+    e?.preventDefault();
+    if (!fullName.trim()) {
+      setError("Please enter your full name");
+      return;
+    }
+    if (!userEmail.trim() || !userEmail.includes("@")) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await completeProfile({
+        mobile: mobile.trim(),
+        name: fullName.trim(),
+        email: userEmail.trim(),
+        dob: dob ? dob.trim() : null,
+        age: 25,
+        gender: gender || "Male",
       });
       closeLoginModal();
       resetForm();
+    } catch (err) {
+      setError(err.message || "Failed to save profile details. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -98,23 +136,21 @@ export default function LoginModal() {
 
   const handleGoogleLogin = () => {
     setLoading(true);
-    setTimeout(() => {
-      login({
-        name: "Aarav Sharma",
-        email: "aarav.sharma@gmail.com",
-        mobile: "9876543210",
-        countryCode: "+91",
-      });
-      setLoading(false);
-      closeLoginModal();
-      resetForm();
-    }, 500);
+    setError("");
+    setFullName("");
+    setUserEmail("");
+    setStep("details");
+    setLoading(false);
   };
 
   const resetForm = () => {
     setStep("mobile");
     setMobile("");
     setOtpDigits(["", "", "", "", "", ""]);
+    setFullName("");
+    setUserEmail("");
+    setDob("");
+    setGender("Male");
     setError("");
   };
 
@@ -196,24 +232,30 @@ export default function LoginModal() {
             </div>
           </div>
 
-          {/* ================= RIGHT COLUMN: LOGIN FORM ================= */}
+          {/* ================= RIGHT COLUMN: LOGIN / PROFILE FORM ================= */}
           <div className="md:col-span-7 p-6 sm:p-8 flex flex-col justify-between">
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Header */}
               <div className="space-y-1 pr-6">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {step === "mobile" ? "Get Started" : "Verify Phone Number"}
+                  {step === "mobile"
+                    ? "Get Started"
+                    : step === "otp"
+                    ? "Verify Phone Number"
+                    : "Complete Your Profile"}
                 </h2>
                 <p className="text-xs font-medium text-slate-500">
                   {step === "mobile"
                     ? "Login to unlock movie ticket bookings"
-                    : `Enter the 6-digit code sent to ${countryCode} ${mobile}`}
+                    : step === "otp"
+                    ? `Enter the 6-digit code sent to ${countryCode} ${mobile}`
+                    : "Please enter your details to set up your BookMySeat account"}
                 </p>
               </div>
 
               {step === "mobile" ? (
                 <div className="space-y-5">
-                  {/* Google Login Button at Top (Authentic BookMyShow Style) */}
+                  {/* Google Login Button */}
                   <button
                     type="button"
                     onClick={handleGoogleLogin}
@@ -268,14 +310,14 @@ export default function LoginModal() {
                       type="submit"
                       loading={loading}
                       variant="primary"
-                      className="w-full py-3 shadow-md shadow-red-500/20 text-xs font-extrabold rounded-2xl"
+                      className="w-full py-3 shadow-md shadow-red-500/20 text-xs font-extrabold rounded-2xl cursor-pointer"
                     >
                       <span>Continue with OTP</span>
                       <ArrowRight className="h-4 w-4" />
                     </LoadingButton>
                   </form>
                 </div>
-              ) : (
+              ) : step === "otp" ? (
                 /* Step 2: 6 Individual OTP Boxes */
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
                   <div className="space-y-2">
@@ -318,17 +360,103 @@ export default function LoginModal() {
                     type="submit"
                     loading={loading}
                     variant="primary"
-                    className="w-full py-3 shadow-md shadow-red-500/20 text-xs font-extrabold rounded-2xl"
+                    className="w-full py-3 shadow-md shadow-red-500/20 text-xs font-extrabold rounded-2xl cursor-pointer"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Verify & Login</span>
+                    <span>Verify & Continue</span>
+                  </LoadingButton>
+                </form>
+              ) : (
+                /* Step 3: Complete Profile Details Form (New Users) */
+                <form onSubmit={handleSaveDetails} className="space-y-3.5">
+                  <div className="space-y-3">
+                    {/* Full Name */}
+                    <div>
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        Full Name *
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="e.g. Aarav Sharma"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-xs font-bold text-slate-900 focus:bg-white focus:border-[#FF1744] focus:ring-2 focus:ring-red-500/20 outline-none transition"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Email Address */}
+                    <div>
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        Email Address *
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                        <input
+                          type="email"
+                          required
+                          value={userEmail}
+                          onChange={(e) => setUserEmail(e.target.value)}
+                          placeholder="aarav@example.com"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-xs font-bold text-slate-900 focus:bg-white focus:border-[#FF1744] focus:ring-2 focus:ring-red-500/20 outline-none transition"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Date of Birth & Gender Grid */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Date of Birth
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                          <input
+                            type="date"
+                            value={dob}
+                            onChange={(e) => setDob(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-[#FF1744] outline-none transition"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Gender
+                        </label>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-xs font-bold text-slate-900 focus:bg-white focus:border-[#FF1744] outline-none transition"
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {error && <p className="text-xs font-bold text-red-500 text-center">{error}</p>}
+                  </div>
+
+                  <LoadingButton
+                    type="submit"
+                    loading={loading}
+                    variant="primary"
+                    className="w-full py-3 shadow-md shadow-red-500/20 text-xs font-extrabold rounded-2xl cursor-pointer"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    <span>Save Profile & Complete</span>
                   </LoadingButton>
                 </form>
               )}
             </div>
 
             {/* Terms Footer */}
-            <div className="pt-6 text-center border-t border-slate-100">
+            <div className="pt-4 text-center border-t border-slate-100">
               <p className="text-[10px] text-slate-400 font-medium leading-normal">
                 By continuing, you agree to BookMySeat's{" "}
                 <span className="text-slate-600 font-bold hover:underline cursor-pointer">Terms of Service</span> &{" "}

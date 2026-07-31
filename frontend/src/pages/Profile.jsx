@@ -42,7 +42,7 @@ const TAB_ITEMS = [
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { isLoggedIn, userData, logout } = useAuth();
+  const { isLoggedIn, userData, logout, openLoginModal } = useAuth();
 
   const [activeTab, setActiveTab] = useState("overview");
   const [userBookings, setUserBookings] = useState([]);
@@ -50,7 +50,8 @@ export default function Profile() {
 
   useEffect(() => {
     if (!isLoggedIn) {
-      navigate("/login");
+      openLoginModal();
+      navigate("/");
       return;
     }
 

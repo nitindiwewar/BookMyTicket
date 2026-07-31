@@ -38,6 +38,9 @@ function getInitialAuth() {
 
 function getInitialUserData() {
   try {
+    if (localStorage.getItem(AUTH_KEY) !== "1" || !localStorage.getItem(TOKEN_KEY)) {
+      return null;
+    }
     const data = localStorage.getItem(USER_KEY);
     return data ? JSON.parse(data) : null;
   } catch {
@@ -117,8 +120,11 @@ export function AuthProvider({ children }) {
       age: res.age,
       gender: res.gender,
     };
-    setIsLoggedIn(true);
-    setUserDataState(user);
+    const isNew = res.isNewUser || res.newUser || !res.name || res.name.startsWith("User_") || !res.email;
+    if (!isNew) {
+      setIsLoggedIn(true);
+      setUserDataState(user);
+    }
     return res;
   }, []);
 
@@ -134,6 +140,7 @@ export function AuthProvider({ children }) {
       age: res.age,
       gender: res.gender,
     };
+    setIsLoggedIn(true);
     setUserDataState(user);
     return user;
   }, []);
