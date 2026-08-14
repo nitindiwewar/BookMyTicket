@@ -87,7 +87,10 @@ export default function Profile() {
   );
 
   const totalSpent = useMemo(() => {
-    return userBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+    return userBookings.reduce((sum, b) => {
+      const amt = b.totalAmount ?? b.total_amount ?? b.ticketAmount ?? b.ticket_amount ?? 0;
+      return sum + Number(amt);
+    }, 0);
   }, [userBookings]);
 
   const rewardPoints = useMemo(() => {
@@ -148,7 +151,9 @@ export default function Profile() {
         <div className="flex flex-col items-center md:items-end justify-between gap-3 w-full md:w-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
           <div className="text-center md:text-right">
             <div className="text-xs text-slate-400 font-bold uppercase">Paid via {b.paymentMethod || "RAZORPAY"}</div>
-            <div className="text-xl font-black text-slate-900">{formatCurrency(b.totalAmount || 0)}</div>
+            <div className="text-xl font-black text-slate-900">
+              {formatCurrency(b.totalAmount ?? b.total_amount ?? b.ticketAmount ?? b.ticket_amount ?? 0)}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
