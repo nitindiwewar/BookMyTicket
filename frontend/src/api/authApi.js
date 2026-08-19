@@ -52,6 +52,64 @@ export async function registerApi(userData) {
   return data;
 }
 
+export async function googleLoginApi(googleData) {
+  const data = await apiClient("/auth/google", {
+    method: "POST",
+    body: JSON.stringify(googleData),
+  });
+  if (data.token) {
+    localStorage.setItem("movieticket-auth-token", data.token);
+  }
+  return data;
+}
+
+export async function updateProfileApi(profileData) {
+  const data = await apiClient("/auth/update-profile", {
+    method: "POST",
+    body: JSON.stringify(profileData),
+  });
+  if (data.token) {
+    localStorage.setItem("movieticket-auth-token", data.token);
+  }
+  return data;
+}
+
+export async function sendEmailOtpApi(email) {
+  return await apiClient("/auth/send-email-otp", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyEmailOtpApi(email, otp) {
+  const data = await apiClient("/auth/verify-email-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
+  if (data.token) {
+    localStorage.setItem("movieticket-auth-token", data.token);
+  }
+  return data;
+}
+
+export async function sendMobileOtpApi(mobile, countryCode = "+91") {
+  return await apiClient("/auth/send-mobile-otp", {
+    method: "POST",
+    body: JSON.stringify({ mobile, countryCode }),
+  });
+}
+
+export async function verifyMobileOtpApi(mobile, otp) {
+  const data = await apiClient("/auth/verify-mobile-otp", {
+    method: "POST",
+    body: JSON.stringify({ mobile, otp }),
+  });
+  if (data.token) {
+    localStorage.setItem("movieticket-auth-token", data.token);
+  }
+  return data;
+}
+
 export async function getCurrentUserApi() {
   return await apiClient("/auth/me");
 }

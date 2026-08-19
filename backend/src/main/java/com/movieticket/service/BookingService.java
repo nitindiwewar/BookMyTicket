@@ -37,6 +37,7 @@ public class BookingService {
     }
 
 
+
     @Transactional
     public BookingResponseDTO createBooking(BookingRequestDTO request, String userEmail) {
         // Enforce strict payment verification for Razorpay payment method
@@ -137,6 +138,7 @@ public class BookingService {
         }
 
         // Generate unique booking code
+        String bookingCode = "BMS-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         String txnId = request.getPaymentTransactionId() != null ? request.getPaymentTransactionId()
                 : (request.getRazorpayPaymentId() != null ? request.getRazorpayPaymentId() : "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 

@@ -17,8 +17,9 @@ public class Booking {
     @Column(nullable = false, unique = true)
     private String bookingCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"password", "hibernateLazyInitializer", "handler"})
     private User user;
 
     @Column(nullable = false)
@@ -29,6 +30,7 @@ public class Booking {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "show_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Show show;
 
     @Column(nullable = false)
@@ -59,6 +61,7 @@ public class Booking {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"booking"})
     private List<BookingSnack> snacks = new ArrayList<>();
 
     public enum BookingStatus { CONFIRMED, CANCELLED }
@@ -76,6 +79,42 @@ public class Booking {
         }
         if (this.paymentStatus == null) {
             this.paymentStatus = "SUCCESS";
+        }
+    }
+
+    public static BookingBuilder builder() {
+        return new BookingBuilder();
+    }
+
+    public static class BookingBuilder {
+        private final Booking booking = new Booking();
+
+        public BookingBuilder bookingCode(String bookingCode) { booking.setBookingCode(bookingCode); return this; }
+        public BookingBuilder user(User user) { booking.setUser(user); return this; }
+        public BookingBuilder customerEmail(String email) { booking.setCustomerEmail(email); return this; }
+        public BookingBuilder customerPhone(String phone) { booking.setCustomerPhone(phone); return this; }
+        public BookingBuilder show(Show show) { booking.setShow(show); return this; }
+        public BookingBuilder seatNumbers(String seatNumbers) { booking.setSeatNumbers(seatNumbers); return this; }
+        public BookingBuilder seatTier(String seatTier) { booking.setSeatTier(seatTier); return this; }
+        public BookingBuilder totalSeats(Integer totalSeats) { booking.setTotalSeats(totalSeats); return this; }
+        public BookingBuilder ticketAmount(BigDecimal ticketAmount) { booking.setTicketAmount(ticketAmount); return this; }
+        public BookingBuilder snackAmount(BigDecimal snackAmount) { booking.setSnackAmount(snackAmount); return this; }
+        public BookingBuilder discountAmount(BigDecimal discountAmount) { booking.setDiscountAmount(discountAmount); return this; }
+        public BookingBuilder convenienceFee(BigDecimal convenienceFee) { booking.setConvenienceFee(convenienceFee); return this; }
+        public BookingBuilder totalAmount(BigDecimal totalAmount) { booking.setTotalAmount(totalAmount); return this; }
+        public BookingBuilder paymentMethod(String paymentMethod) { booking.setPaymentMethod(paymentMethod); return this; }
+        public BookingBuilder paymentTransactionId(String txnId) { booking.setPaymentTransactionId(txnId); return this; }
+        public BookingBuilder paymentStatus(String status) { booking.setPaymentStatus(status); return this; }
+        public BookingBuilder paymentDetails(String details) { booking.setPaymentDetails(details); return this; }
+        public BookingBuilder paidAt(LocalDateTime paidAt) { booking.setPaidAt(paidAt); return this; }
+        public BookingBuilder couponCode(String couponCode) { booking.setCouponCode(couponCode); return this; }
+        public BookingBuilder razorpayOrderId(String id) { booking.setRazorpayOrderId(id); return this; }
+        public BookingBuilder razorpayPaymentId(String id) { booking.setRazorpayPaymentId(id); return this; }
+        public BookingBuilder razorpaySignature(String sig) { booking.setRazorpaySignature(sig); return this; }
+        public BookingBuilder status(BookingStatus status) { booking.setStatus(status); return this; }
+
+        public Booking build() {
+            return booking;
         }
     }
 

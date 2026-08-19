@@ -135,15 +135,36 @@ export default function Navbar() {
 
             {/* Sign In CTA */}
             {isLoggedIn ? (
-              <NavLink
-                to="/profile"
-                className="flex items-center gap-2 rounded-full bg-white border border-[#E5E7EB] px-3.5 py-1.5 text-xs font-bold text-[#111827] shadow-2xs hover:shadow-xs transition-all"
-              >
-                <div className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-tr from-[#FF1744] to-[#FF4F6D] text-[9px] font-extrabold text-white">
-                  {userData?.name ? userData.name.substring(0, 2).toUpperCase() : "U"}
-                </div>
-                <span className="hidden sm:inline font-extrabold">{userData?.name || "Profile"}</span>
-              </NavLink>
+              <div className="flex items-center gap-2">
+                {(userData?.role === "ROLE_ADMIN" || userData?.role === "ADMIN") ? (
+                  <>
+                    <NavLink
+                      to="/admin"
+                      className="flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md shadow-red-600/30 hover:bg-red-700 transition-all"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Admin Console</span>
+                    </NavLink>
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <NavLink
+                    to="/profile"
+                    className="flex items-center gap-2 rounded-full bg-white border border-[#E5E7EB] px-3.5 py-1.5 text-xs font-bold text-[#111827] shadow-2xs hover:shadow-xs transition-all"
+                  >
+                    <div className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-tr from-[#FF1744] to-[#FF4F6D] text-[9px] font-extrabold text-white">
+                      {userData?.name ? userData.name.substring(0, 2).toUpperCase() : "U"}
+                    </div>
+                    <span className="hidden sm:inline font-extrabold">{userData?.name || "Profile"}</span>
+                  </NavLink>
+                )}
+              </div>
             ) : (
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
                 <button

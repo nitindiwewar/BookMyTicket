@@ -8,9 +8,9 @@ spring:
     name: movie-ticket-backend
 
   datasource:
-    url: jdbc:mysql://localhost:3306/movieticket
-    username: root
-    password: Nitin@2004
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/movieticket?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:Nitin@2004}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -21,6 +21,18 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:nitindiwewar0@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:hddygbsicnmqvuun}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 # JWT Configuration
 app:
@@ -37,5 +49,9 @@ tmdb:
   image-base-url: https://image.tmdb.org/t/p
 
 razorpay:
-  key-id: rzp_test_TJJY5Q4lsHDjQL
-  key-secret: wcoypHqN2jd0V23A5y3dweV8
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_TJJY5Q4lsHDjQL}
+  key-secret: ${RAZORPAY_KEY_SECRET:wcoypHqN2jd0V23A5y3dweV8}
+
+sms:
+  fast2sms:
+    api-key: ${FAST2SMS_API_KEY:gNDESxRv5IHj37KGeBFCdcuYXslOq4n8k1btUTVaM9frph6zLPlcdEiPUoNu5DxmJfXhpV8OegtBRkTS}

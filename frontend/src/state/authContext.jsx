@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { sendOtpApi, verifyOtpApi, completeProfileApi, loginApi, registerApi, getCurrentUserApi } from "../api/authApi.js";
+import { sendOtpApi, verifyOtpApi, completeProfileApi, loginApi, registerApi, googleLoginApi, updateProfileApi, sendEmailOtpApi, verifyEmailOtpApi, getCurrentUserApi } from "../api/authApi.js";
 
 const AUTH_KEY = "movieticket-auth";
 const USER_KEY = "movieticket-user";
@@ -22,8 +22,12 @@ export const AuthContext = createContext({
   sendOtp: async () => {},
   verifyOtp: async () => {},
   completeProfile: async () => {},
+  updateProfile: async () => {},
+  sendEmailOtp: async () => {},
+  verifyEmailOtp: async () => {},
   login: async () => {},
   register: async () => {},
+  googleLogin: async () => {},
   logout: () => {},
   setUserData: () => {},
 });
@@ -71,6 +75,9 @@ export function AuthProvider({ children }) {
               dob: user.dob,
               age: user.age,
               gender: user.gender,
+              role: user.role || "ROLE_USER",
+              emailVerified: Boolean(user.emailVerified),
+              mobileVerified: Boolean(user.mobileVerified),
             });
           }
         })
@@ -119,6 +126,9 @@ export function AuthProvider({ children }) {
       dob: res.dob,
       age: res.age,
       gender: res.gender,
+      role: res.role || "ROLE_USER",
+      emailVerified: Boolean(res.emailVerified),
+      mobileVerified: true,
     };
     const isNew = res.isNewUser || res.newUser || !res.name || res.name.startsWith("User_") || !res.email;
     if (!isNew) {
@@ -139,6 +149,9 @@ export function AuthProvider({ children }) {
       dob: res.dob,
       age: res.age,
       gender: res.gender,
+      role: res.role || "ROLE_USER",
+      emailVerified: Boolean(res.emailVerified),
+      mobileVerified: Boolean(res.mobileVerified),
     };
     setIsLoggedIn(true);
     setUserDataState(user);
@@ -161,6 +174,9 @@ export function AuthProvider({ children }) {
       dob: res.dob,
       age: res.age,
       gender: res.gender,
+      role: res.role || "ROLE_USER",
+      emailVerified: Boolean(res.emailVerified),
+      mobileVerified: Boolean(res.mobileVerified),
     };
     setIsLoggedIn(true);
     setUserDataState(user);
@@ -178,11 +194,99 @@ export function AuthProvider({ children }) {
       dob: res.dob,
       age: res.age,
       gender: res.gender,
+      role: res.role || "ROLE_USER",
+      emailVerified: Boolean(res.emailVerified),
+      mobileVerified: Boolean(res.mobileVerified),
     };
     setIsLoggedIn(true);
     setUserDataState(user);
     return user;
   }, []);
+
+  const googleLogin = useCallback(async (googleData) => {
+    const res = await googleLoginApi(googleData);
+    const user = {
+      id: res.id,
+      name: res.name,
+      email: res.email,
+      mobile: res.mobile,
+      countryCode: res.countryCode,
+      dob: res.dob,
+      age: res.age,
+      gender: res.gender,
+      role: res.role || "ROLE_USER",
+      emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+      mobileVerified: res.mobileVerified,
+    };
+    setIsLoggedIn(true);
+    setUserDataState(user);
+    return user;
+  }, []);
+
+  const updateProfile = useCallback(async (profileData) => {
+    const res = await updateProfileApi(profileData);
+    const user = {
+      id: res.id,
+      name: res.name,
+      email: res.email,
+      mobile: res.mobile,
+      countryCode: res.countryCode,
+      dob: res.dob,
+      age: res.age,
+      gender: res.gender,
+      role: res.role || userData?.role || "ROLE_USER",
+      emailVerified: res.emailVerified,
+      mobileVerified: res.mobileVerified,
+    };
+    setUserDataState(user);
+    return user;
+  }, [userData]);
+
+  const sendEmailOtp = useCallback(async (email) => {
+    return await sendEmailOtpApi(email);
+  }, []);
+
+  const verifyEmailOtp = useCallback(async (email, otp) => {
+    const res = await verifyEmailOtpApi(email, otp);
+    const user = {
+      id: res.id,
+      name: res.name,
+      email: res.email,
+      mobile: res.mobile,
+      countryCode: res.countryCode,
+      dob: res.dob,
+      age: res.age,
+      gender: res.gender,
+      role: res.role || userData?.role || "ROLE_USER",
+      emailVerified: true,
+      mobileVerified: res.mobileVerified,
+    };
+    setUserDataState(user);
+    return user;
+  }, [userData]);
+
+  const sendMobileOtp = useCallback(async (mobile, countryCode) => {
+    return await sendMobileOtpApi(mobile, countryCode);
+  }, []);
+
+  const verifyMobileOtp = useCallback(async (mobile, otp) => {
+    const res = await verifyMobileOtpApi(mobile, otp);
+    const user = {
+      id: res.id,
+      name: res.name,
+      email: res.email,
+      mobile: res.mobile,
+      countryCode: res.countryCode,
+      dob: res.dob,
+      age: res.age,
+      gender: res.gender,
+      role: res.role || userData?.role || "ROLE_USER",
+      emailVerified: res.emailVerified,
+      mobileVerified: true,
+    };
+    setUserDataState(user);
+    return user;
+  }, [userData]);
 
   const logout = useCallback(() => {
     setIsLoggedIn(false);
@@ -210,12 +314,18 @@ export function AuthProvider({ children }) {
       sendOtp,
       verifyOtp,
       completeProfile,
+      updateProfile,
+      sendEmailOtp,
+      verifyEmailOtp,
+      sendMobileOtp,
+      verifyMobileOtp,
       login,
       register,
+      googleLogin,
       logout,
       setUserData,
     }),
-    [isLoggedIn, userData, isLoginModalOpen, openLoginModal, closeLoginModal, sendOtp, verifyOtp, completeProfile, login, register, logout, setUserData]
+    [isLoggedIn, userData, isLoginModalOpen, openLoginModal, closeLoginModal, sendOtp, verifyOtp, completeProfile, updateProfile, sendEmailOtp, verifyEmailOtp, sendMobileOtp, verifyMobileOtp, login, register, googleLogin, logout, setUserData]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

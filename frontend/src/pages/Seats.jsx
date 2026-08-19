@@ -134,6 +134,9 @@ export default function Seats() {
           });
           if (Object.keys(priceMap).length > 0) {
             setSeatPrices((prev) => ({ ...prev, ...priceMap }));
+            if (booking.setSeatPrices) {
+              booking.setSeatPrices(priceMap);
+            }
           }
         }
       }).catch((err) => console.warn("Error fetching seats from backend:", err));

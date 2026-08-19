@@ -20,6 +20,7 @@ const initialState = {
   time: null,
   seats: [],
   seatTier: null,
+  seatPrices: {},
   snacks: {}, // { snackId: qty }
   coupon: "",
   paymentMethod: "",
@@ -106,6 +107,9 @@ export function BookingProvider({ children }) {
       },
       setSeatTier(seatTier) {
         setState((s) => ({ ...s, seatTier }));
+      },
+      setSeatPrices(seatPrices) {
+        setState((s) => ({ ...s, seatPrices: { ...s.seatPrices, ...seatPrices } }));
       },
       setSnackQty(snackId, qty) {
         setState((s) => {

@@ -32,6 +32,8 @@ public class ShowService {
         this.movieRepository = movieRepository;
     }
 
+
+
     public List<Show> getShowsByMovieAndDate(String movieId, LocalDate date) {
         if (date != null) {
             List<Show> list = showRepository.findByMovieIdAndDate(movieId, date);

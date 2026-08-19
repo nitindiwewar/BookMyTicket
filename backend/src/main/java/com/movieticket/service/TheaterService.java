@@ -25,6 +25,7 @@ public class TheaterService {
         this.showSeatRepository = showSeatRepository;
     }
 
+
     public void ensureShowsExist() {
         if (showRepository.count() == 0) {
             List<Movie> movies = movieRepository.findAll();

@@ -40,6 +40,7 @@ public class TmdbService {
         this.restTemplate = new RestTemplate();
     }
 
+
     public List<TmdbMovieSummary> searchMovies(String query) {
         if (query == null || query.isBlank()) {
             return getNowPlaying();

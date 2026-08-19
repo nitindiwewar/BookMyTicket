@@ -17,6 +17,7 @@ public class MovieService {
     }
 
 
+
     public List<Movie> getAllMovies(String language, String genre, String format, String search) {
         String cleanLang = (language != null && !language.trim().isEmpty()) ? language.trim() : null;
         String cleanGenre = (genre != null && !genre.trim().isEmpty()) ? genre.trim() : null;

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. Database Service: MySQL 8.0
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+    container_name: movieticket-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Nitin@2004}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-movieticket}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-Nitin@2004}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - movieticket-network
+
+  # ==========================================
+  # 2. Backend Service: Spring Boot REST API
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: movieticket-backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-movieticket}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Nitin@2004}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-nitindiwewar0@gmail.com}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-hddygbsicnmqvuun}
+      TMDB_API_KEY: ${TMDB_API_KEY:-e01d0966ebcead42f3a3bec84c24b41d}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_TJJY5Q4lsHDjQL}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-wcoypHqN2jd0V23A5y3dweV8}
+      FAST2SMS_API_KEY: ${FAST2SMS_API_KEY:-gNDESxRv5IHj37KGeBFCdcuYXslOq4n8k1btUTVaM9frph6zLPlcdEiPUoNu5DxmJfXhpV8OegtBRkTS}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - movieticket-network
+
+  # ==========================================
+  # 3. Frontend Service: Nginx + React SPA
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: movieticket-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - movieticket-network
+
+# ==========================================
+# Persistent Volumes & Private Network
+# ==========================================
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  movieticket-network:
+    driver: bridge

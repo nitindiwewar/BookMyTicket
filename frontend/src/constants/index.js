@@ -63,6 +63,8 @@ export const STORAGE_KEYS = {
  * Cities for location selection
  */
 export const CITY_OPTIONS = [
+  "Gondia",
+  "Nagpur",
   "Mumbai",
   "Delhi NCR",
   "Bengaluru",
@@ -74,6 +76,8 @@ export const CITY_OPTIONS = [
 ];
 
 export const CITY_COORDINATES = {
+  Gondia: [21.4624, 80.1963],
+  Nagpur: [21.1458, 79.0882],
   Mumbai: [19.076, 72.8777],
   "Delhi NCR": [28.6139, 77.209],
   Bengaluru: [12.9716, 77.5946],

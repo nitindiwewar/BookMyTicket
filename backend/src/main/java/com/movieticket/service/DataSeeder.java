@@ -7,8 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -20,10 +19,11 @@ public class DataSeeder implements CommandLineRunner {
     private final BookingRepository bookingRepository;
     private final SnackRepository snackRepository;
     private final CouponRepository couponRepository;
+    private final TheaterRepository theaterRepository;
     private final PasswordEncoder passwordEncoder;
     private final TmdbService tmdbService;
 
-    public DataSeeder(UserRepository userRepository, MovieRepository movieRepository, ShowRepository showRepository, ShowSeatRepository showSeatRepository, BookingRepository bookingRepository, SnackRepository snackRepository, CouponRepository couponRepository, PasswordEncoder passwordEncoder, TmdbService tmdbService) {
+    public DataSeeder(UserRepository userRepository, MovieRepository movieRepository, ShowRepository showRepository, ShowSeatRepository showSeatRepository, BookingRepository bookingRepository, SnackRepository snackRepository, CouponRepository couponRepository, TheaterRepository theaterRepository, PasswordEncoder passwordEncoder, TmdbService tmdbService) {
         this.userRepository = userRepository;
         this.movieRepository = movieRepository;
         this.showRepository = showRepository;
@@ -31,6 +31,7 @@ public class DataSeeder implements CommandLineRunner {
         this.bookingRepository = bookingRepository;
         this.snackRepository = snackRepository;
         this.couponRepository = couponRepository;
+        this.theaterRepository = theaterRepository;
         this.passwordEncoder = passwordEncoder;
         this.tmdbService = tmdbService;
     }
@@ -39,28 +40,36 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         seedUsers();
         seedMovies();
+        seedTheaters();
         seedSnacks();
         seedCoupons();
     }
 
     private void seedUsers() {
         if (userRepository.count() == 0) {
-            User adminUser = User.builder()
-                    .name("Admin User")
-                    .email("admin@movieticket.com")
+            userRepository.save(User.builder()
+                    .name("Admin User").email("admin@movieticket.com")
                     .password(passwordEncoder.encode("admin123"))
-                    .mobile("9999988888")
-                    .countryCode("+91")
-                    .role(User.Role.ROLE_USER)
-                    .build();
-            userRepository.save(adminUser);
+                    .mobile("9999988888").countryCode("+91")
+                    .role(User.Role.ROLE_ADMIN)
+                    .emailVerified(true)
+                    .mobileVerified(true)
+                    .build());
+        } else {
+            userRepository.findFirstByEmailOrderByCreatedAtDesc("admin@movieticket.com").ifPresent(u -> {
+                u.setRole(User.Role.ROLE_ADMIN);
+                userRepository.save(u);
+            });
+            userRepository.findFirstByEmailOrderByCreatedAtDesc("nitindiwewar0@gmail.com").ifPresent(u -> {
+                u.setRole(User.Role.ROLE_ADMIN);
+                userRepository.save(u);
+            });
         }
     }
 
     private void seedMovies() {
         List<Movie> existing = movieRepository.findAll();
-        boolean hasOldMockMovies = existing.stream().anyMatch(m -> !m.getId().startsWith("tmdb-"));
-        if (hasOldMockMovies || existing.size() < 20) {
+        if (existing.stream().anyMatch(m -> !m.getId().startsWith("tmdb-")) || existing.size() < 20) {
             try {
                 bookingRepository.deleteAll();
                 showSeatRepository.deleteAll();
@@ -70,7 +79,6 @@ public class DataSeeder implements CommandLineRunner {
                 System.err.println("Database cleanup warning: " + e.getMessage());
             }
         }
-
         if (movieRepository.count() == 0) {
             tmdbService.syncPopularMovies();
         }
@@ -78,24 +86,34 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedSnacks() {
         if (snackRepository.count() == 0) {
-            List<Snack> snacks = List.of(
+            snackRepository.saveAll(List.of(
                     Snack.builder().name("Salted Popcorn (Large)").category("POPCORN").price(BigDecimal.valueOf(280)).calories("450 kcal").description("Classic salted crunchy popcorn").build(),
                     Snack.builder().name("Cheese Popcorn (Jumbo)").category("POPCORN").price(BigDecimal.valueOf(320)).calories("580 kcal").description("Loaded with cheddar cheese powder").build(),
                     Snack.builder().name("Pepsi (750ml)").category("BEVERAGES").price(BigDecimal.valueOf(180)).calories("210 kcal").description("Chilled carbonated soft drink").build(),
                     Snack.builder().name("Nachos with Salsa & Cheese").category("COMBO").price(BigDecimal.valueOf(340)).calories("620 kcal").description("Crispy corn chips with warm cheese dip").build(),
                     Snack.builder().name("Chicken Burger").category("FOOD").price(BigDecimal.valueOf(260)).calories("520 kcal").description("Grilled patty with lettuce and mayo").build()
-            );
-            snackRepository.saveAll(snacks);
+            ));
+        }
+    }
+
+    private void seedTheaters() {
+        if (theaterRepository.findAll().stream().noneMatch(t -> "Gondia".equalsIgnoreCase(t.getCity()))) {
+            theaterRepository.saveAll(List.of(
+                    Theater.builder().id("t-gondia-1").name("Gold Digital Cinema").city("Gondia").area("Civil Lines, Near Railway Station").latitude(21.4624).longitude(80.1963).build(),
+                    Theater.builder().id("t-gondia-2").name("Raj Cinema & Multiplex").city("Gondia").area("Ganj Bazar, Main Road").latitude(21.4580).longitude(80.1920).build(),
+                    Theater.builder().id("t-gondia-3").name("Chitralok Cinema").city("Gondia").area("Kudwa Road").latitude(21.4655).longitude(80.2012).build(),
+                    Theater.builder().id("t-gondia-4").name("INOX City Mall").city("Gondia").area("Ring Road").latitude(21.4600).longitude(80.1980).build()
+            ));
         }
     }
 
     private void seedCoupons() {
         if (couponRepository.count() == 0) {
-            List<Coupon> coupons = List.of(
+            couponRepository.saveAll(List.of(
                     Coupon.builder().code("WELCOME50").discountPercentage(15).minOrderAmount(BigDecimal.valueOf(200)).maxDiscountAmount(BigDecimal.valueOf(50)).active(true).build(),
                     Coupon.builder().code("MOVIE20").discountPercentage(20).minOrderAmount(BigDecimal.valueOf(300)).maxDiscountAmount(BigDecimal.valueOf(100)).active(true).build()
-            );
-            couponRepository.saveAll(coupons);
+            ));
         }
     }
 }
+

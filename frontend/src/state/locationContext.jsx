@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { STORAGE_KEYS } from "../constants/index.js";
+import { apiClient } from "../api/apiClient.js";
 
 const LocationContext = createContext(null);
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyAEeb2ervheFgG-c1ipDU0mKuKvEqxj8QY";
@@ -68,41 +69,16 @@ function extractExactLocationFromGoogleMaps(results) {
 
 async function reverseGeocodeGps(lat, lng) {
   try {
-    await loadGoogleMapsSdk();
-    if (window.google?.maps?.Geocoder) {
-      const geocoder = new window.google.maps.Geocoder();
-      const res = await new Promise((resolve) => {
-        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-          if (status === "OK" && results && results.length > 0) {
-            resolve(extractExactLocationFromGoogleMaps(results));
-          } else {
-            resolve(null);
-          }
-        });
-      });
-      if (res) return res;
+    const data = await apiClient("/location/detect", {
+      method: "POST",
+      body: JSON.stringify({ latitude: lat, longitude: lng }),
+    });
+    if (data && data.city) {
+      return data.fullLocation || data.city;
     }
   } catch (err) {
-    console.warn("Google Maps Geocoder failed, using fallback:", err);
+    console.warn("Backend location detection failed:", err);
   }
-
-  try {
-    const res = await fetch(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const sub = data.locality || data.localityInfo?.informative?.[0]?.name;
-      const city = data.city || data.principalSubdivision;
-      if (sub && city && sub.toLowerCase() !== city.toLowerCase()) {
-        return `${sub}, ${city}`;
-      }
-      return city || sub;
-    }
-  } catch (e) {
-    console.warn("GPS Reverse Geocode fetch error:", e);
-  }
-
   return null;
 }
 

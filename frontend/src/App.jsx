@@ -20,6 +20,8 @@ const Snacks = lazy(() => import("./pages/Snacks.jsx"));
 const Seats = lazy(() => import("./pages/Seats.jsx"));
 const Theaters = lazy(() => import("./pages/Theaters.jsx"));
 const Confirmation = lazy(() => import("./pages/Confirmation.jsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
+import AdminRoute from "./components/auth/AdminRoute.jsx";
 
 // OTP-based auth pages
 const VerifyOTP = lazy(() => import("./pages/VerifyOTP.jsx"));
@@ -42,11 +44,12 @@ function PageLoader() {
 
 function App() {
   const location = useLocation();
+  const isAdminPage = location.pathname.startsWith("/admin");
   const isAuthPage = [
     "/enter-mobile",
     "/verify-otp",
     "/complete-profile",
-  ].includes(location.pathname);
+  ].includes(location.pathname) || isAdminPage;
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-[var(--app-bg)] text-[var(--app-text)] transition-colors duration-300">
@@ -85,6 +88,9 @@ function App() {
                   <Route path="/forgot" element={<Navigate to="/" replace />} />
                   <Route path="/otp" element={<Navigate to="/" replace />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                  <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                  <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/support" element={<Support />} />
                   <Route path="*" element={<NotFound />} />

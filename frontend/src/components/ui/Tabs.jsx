@@ -6,16 +6,17 @@ export default function Tabs({ items, activeTab, onChange, className = "" }) {
       className={`flex items-center gap-1 overflow-x-auto p-1.5 rounded-2xl bg-slate-100/90 scrollbar-none ${className}`}
     >
       {items.map((tab) => {
-        const isActive = activeTab === tab.key;
+        const key = tab.key || tab.id;
+        const isActive = activeTab === key;
         const Icon = tab.icon;
 
         return (
           <button
-            key={tab.key}
+            key={key}
             type="button"
-            onClick={() => onChange(tab.key)}
-            className={`relative flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold transition-colors duration-200 shrink-0 rounded-xl ${
-              isActive ? "text-red-600" : "text-slate-600 hover:text-slate-900"
+            onClick={() => onChange(key)}
+            className={`relative flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold transition-colors duration-200 shrink-0 rounded-xl cursor-pointer ${
+              isActive ? "text-red-600 font-extrabold" : "text-slate-600 hover:text-slate-900"
             }`}
           >
             {isActive && (

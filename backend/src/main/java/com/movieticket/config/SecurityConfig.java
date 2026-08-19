@@ -34,6 +34,7 @@ public class SecurityConfig {
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/movies/**",
@@ -43,6 +44,7 @@ public class SecurityConfig {
                     "/api/coupons/**",
                     "/api/bookings/**",
                     "/api/payments/**",
+                    "/api/location/**",
                     "/api/tmdb/**",
                     "/h2-console/**",
                     "/v3/api-docs/**",

@@ -19,6 +19,7 @@ public class CouponService {
     }
 
 
+
     public CouponValidationDTO.Response validateCoupon(String code, BigDecimal orderAmount) {
         if (code == null || code.trim().isEmpty()) {
             return CouponValidationDTO.Response.builder()

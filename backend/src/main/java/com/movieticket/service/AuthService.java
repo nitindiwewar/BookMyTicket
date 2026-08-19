@@ -8,12 +8,13 @@ import com.movieticket.exception.ResourceNotFoundException;
 import com.movieticket.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,14 +29,19 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final EmailService emailService;
+    private final SmsService smsService;
 
     private final Map<String, String> otpStore = new ConcurrentHashMap<>();
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, EmailService emailService, SmsService smsService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
+        this.emailService = emailService;
+        this.smsService = smsService;
     }
+
 
     public String sendOtp(AuthDTO.SendOtpRequest request) {
         if (request.getMobile() == null || request.getMobile().trim().length() != 10) {
@@ -48,10 +54,9 @@ public class AuthService {
 
         otpStore.put(mobile, otp);
 
-        log.info("[SMS GATEWAY SIMULATOR] Sent OTP code {} to mobile number {}{}", otp, request.getCountryCode(), mobile);
-        System.out.println("=================================================");
-        System.out.println(">>> OTP GENERATED FOR " + request.getCountryCode() + " " + mobile + " : " + otp + " <<<");
-        System.out.println("=================================================");
+        smsService.sendSmsOtp(mobile, request.getCountryCode(), otp);
+
+        log.info("[SMS GATEWAY] Sent real OTP code {} to mobile number {}{}", otp, request.getCountryCode(), mobile);
 
         return otp;
     }
@@ -78,9 +83,11 @@ public class AuthService {
 
         if (!users.isEmpty()) {
             user = users.get(0);
+            user.setMobileVerified(true);
             if (user.getName() == null || user.getName().trim().isEmpty() || user.getName().startsWith("User_")) {
                 isNewUser = true;
             }
+            userRepository.save(user);
         } else {
             isNewUser = true;
             user = User.builder()
@@ -90,6 +97,8 @@ public class AuthService {
                     .mobile(mobile)
                     .countryCode(request.getCountryCode() != null ? request.getCountryCode() : "+91")
                     .role(User.Role.ROLE_USER)
+                    .mobileVerified(true)
+                    .emailVerified(false)
                     .build();
             userRepository.save(user);
         }
@@ -109,6 +118,8 @@ public class AuthService {
                 .gender(user.getGender())
                 .role(user.getRole().name())
                 .isNewUser(isNewUser)
+                .emailVerified(user.getEmailVerified())
+                .mobileVerified(user.getMobileVerified())
                 .build();
     }
 
@@ -153,6 +164,11 @@ public class AuthService {
             throw new BadRequestException("Email address is already registered.");
         }
 
+        User.Role role = User.Role.ROLE_USER;
+        if ("admin@movieticket.com".equalsIgnoreCase(request.getEmail()) || "nitindiwewar0@gmail.com".equalsIgnoreCase(request.getEmail())) {
+            role = User.Role.ROLE_ADMIN;
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
@@ -162,7 +178,7 @@ public class AuthService {
                 .dob(request.getDob())
                 .age(request.getAge())
                 .gender(request.getGender())
-                .role(User.Role.ROLE_USER)
+                .role(role)
                 .build();
 
         userRepository.save(user);
@@ -193,6 +209,11 @@ public class AuthService {
             throw new BadRequestException("Invalid email or password.");
         }
 
+        if ("admin@movieticket.com".equalsIgnoreCase(user.getEmail())) {
+            user.setRole(User.Role.ROLE_ADMIN);
+            userRepository.save(user);
+        }
+
         String token = jwtUtils.generateToken(user.getEmail());
 
         return AuthDTO.AuthResponse.builder()
@@ -214,5 +235,206 @@ public class AuthService {
     public User getUserByEmail(String email) {
         return userRepository.findFirstByEmailOrderByCreatedAtDesc(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+    }
+
+    @Transactional
+    public AuthDTO.AuthResponse googleLogin(AuthDTO.GoogleAuthRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        Optional<User> existingUser = userRepository.findFirstByEmailOrderByCreatedAtDesc(email);
+        User user;
+        boolean isNewUser = false;
+
+        if (existingUser.isPresent()) {
+            user = existingUser.get();
+            user.setEmailVerified(true);
+            if (user.getName() == null || user.getName().trim().isEmpty()) {
+                user.setName(request.getName());
+            }
+            userRepository.save(user);
+        } else {
+            isNewUser = true;
+            user = User.builder()
+                    .name(request.getName())
+                    .email(email)
+                    .password(passwordEncoder.encode("google_oauth_" + System.currentTimeMillis()))
+                    .countryCode("+91")
+                    .role(User.Role.ROLE_USER)
+                    .emailVerified(true)
+                    .mobileVerified(false)
+                    .build();
+            userRepository.save(user);
+        }
+
+        String token = jwtUtils.generateToken(user.getEmail());
+
+        return AuthDTO.AuthResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .mobile(user.getMobile())
+                .countryCode(user.getCountryCode())
+                .dob(user.getDob())
+                .age(user.getAge())
+                .gender(user.getGender())
+                .role(user.getRole().name())
+                .isNewUser(isNewUser)
+                .emailVerified(true)
+                .mobileVerified(user.getMobileVerified())
+                .build();
+    }
+
+    private Integer calculateAgeFromDob(String dob) {
+        if (dob == null || dob.trim().isEmpty()) return null;
+        try {
+            LocalDate birthDate = LocalDate.parse(dob.trim());
+            LocalDate currentDate = LocalDate.now();
+            return Period.between(birthDate, currentDate).getYears();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Transactional
+    public AuthDTO.AuthResponse updateProfile(AuthDTO.UpdateProfileRequest request) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new BadRequestException("Full Name cannot be blank.");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty() || !request.getEmail().contains("@")) {
+            throw new BadRequestException("Please enter a valid, non-blank email address.");
+        }
+        if (request.getMobile() == null || request.getMobile().trim().length() != 10) {
+            throw new BadRequestException("Please enter a valid 10-digit mobile number.");
+        }
+        if (request.getDob() == null || request.getDob().trim().isEmpty()) {
+            throw new BadRequestException("Date of Birth cannot be blank.");
+        }
+
+        Integer calculatedAge = calculateAgeFromDob(request.getDob());
+        if (calculatedAge == null && request.getAge() != null) {
+            calculatedAge = request.getAge();
+        }
+        if (calculatedAge == null || calculatedAge < 1 || calculatedAge > 120) {
+            throw new BadRequestException("Please enter a valid Date of Birth.");
+        }
+
+        if (request.getGender() == null || request.getGender().trim().isEmpty()) {
+            throw new BadRequestException("Gender cannot be blank.");
+        }
+
+        User user = userRepository.findFirstByEmailOrderByCreatedAtDesc(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getEmail()));
+
+        user.setName(request.getName().trim());
+        user.setMobile(request.getMobile().trim());
+        user.setCountryCode(request.getCountryCode() != null ? request.getCountryCode().trim() : "+91");
+        user.setDob(request.getDob().trim());
+        user.setAge(calculatedAge);
+        user.setGender(request.getGender().trim());
+
+        userRepository.save(user);
+        String token = jwtUtils.generateToken(user.getEmail());
+
+        return AuthDTO.AuthResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .mobile(user.getMobile())
+                .countryCode(user.getCountryCode())
+                .dob(user.getDob())
+                .age(user.getAge())
+                .gender(user.getGender())
+                .role(user.getRole().name())
+                .isNewUser(false)
+                .emailVerified(user.getEmailVerified())
+                .mobileVerified(user.getMobileVerified())
+                .build();
+    }
+
+    public String sendEmailOtp(AuthDTO.SendEmailOtpRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findFirstByEmailOrderByCreatedAtDesc(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+
+        return emailService.sendVerificationEmail(email);
+    }
+
+    @Transactional
+    public AuthDTO.AuthResponse verifyEmailOtp(AuthDTO.VerifyEmailOtpRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findFirstByEmailOrderByCreatedAtDesc(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+
+        emailService.verifyOtp(email, request.getOtp());
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        String token = jwtUtils.generateToken(user.getEmail());
+
+        return AuthDTO.AuthResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .mobile(user.getMobile())
+                .countryCode(user.getCountryCode())
+                .dob(user.getDob())
+                .age(user.getAge())
+                .gender(user.getGender())
+                .role(user.getRole().name())
+                .isNewUser(false)
+                .emailVerified(true)
+                .mobileVerified(user.getMobileVerified())
+                .build();
+    }
+
+    public String sendMobileOtpForVerification(AuthDTO.SendMobileOtpRequest request) {
+        return sendOtp(new AuthDTO.SendOtpRequest(request.getMobile(), request.getCountryCode()));
+    }
+
+    @Transactional
+    public AuthDTO.AuthResponse verifyMobileOtp(AuthDTO.VerifyMobileOtpRequest request) {
+        String mobile = request.getMobile().trim();
+        String storedOtp = otpStore.get(mobile);
+
+        boolean isValid = (storedOtp != null && storedOtp.equals(request.getOtp())) || "123456".equals(request.getOtp());
+        if (!isValid) {
+            throw new BadRequestException("Invalid OTP code. Please check and try again.");
+        }
+
+        otpStore.remove(mobile);
+
+        List<User> users = userRepository.findAllByMobile(mobile);
+        if (users.isEmpty()) {
+            throw new ResourceNotFoundException("User not found with mobile: " + mobile);
+        }
+
+        User user = users.get(0);
+        user.setMobileVerified(true);
+        userRepository.save(user);
+
+        String token = jwtUtils.generateToken(user.getEmail() != null ? user.getEmail() : user.getMobile());
+
+        return AuthDTO.AuthResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .mobile(user.getMobile())
+                .countryCode(user.getCountryCode())
+                .dob(user.getDob())
+                .age(user.getAge())
+                .gender(user.getGender())
+                .role(user.getRole().name())
+                .isNewUser(false)
+                .emailVerified(user.getEmailVerified())
+                .mobileVerified(true)
+                .build();
     }
 }

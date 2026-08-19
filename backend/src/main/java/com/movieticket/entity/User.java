@@ -1,10 +1,16 @@
 package com.movieticket.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -33,6 +39,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    private Boolean emailVerified = false;
+
+    private Boolean mobileVerified = false;
 
     private LocalDateTime createdAt;
 
@@ -99,6 +109,14 @@ public class User {
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
 
+    public Boolean getEmailVerified() { return emailVerified != null && emailVerified; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public Boolean getMobileVerified() { return mobileVerified != null && mobileVerified; }
+    public void setMobileVerified(Boolean mobileVerified) { this.mobileVerified = mobileVerified; }
+
+    public Boolean isFullyVerified() { return getEmailVerified() && getMobileVerified(); }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -116,6 +134,8 @@ public class User {
         private Integer age;
         private String gender;
         private Role role;
+        private Boolean emailVerified = false;
+        private Boolean mobileVerified = false;
         private LocalDateTime createdAt;
 
         public UserBuilder id(Long id) { this.id = id; return this; }
@@ -128,10 +148,15 @@ public class User {
         public UserBuilder age(Integer age) { this.age = age; return this; }
         public UserBuilder gender(String gender) { this.gender = gender; return this; }
         public UserBuilder role(Role role) { this.role = role; return this; }
+        public UserBuilder emailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; return this; }
+        public UserBuilder mobileVerified(Boolean mobileVerified) { this.mobileVerified = mobileVerified; return this; }
         public UserBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
 
         public User build() {
-            return new User(id, name, email, password, mobile, countryCode, dob, age, gender, role, createdAt);
+            User u = new User(id, name, email, password, mobile, countryCode, dob, age, gender, role, createdAt);
+            u.setEmailVerified(emailVerified);
+            u.setMobileVerified(mobileVerified);
+            return u;
         }
     }
 }

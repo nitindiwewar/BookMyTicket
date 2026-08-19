@@ -101,12 +101,14 @@ export default function Payment() {
   }, [timeLeft]);
 
   const ticketTotal = useMemo(() => {
+    const customPrices = booking.state.seatPrices || {};
     return booking.state.seats.reduce((sum, seatId) => {
       const row = seatId.charAt(0);
       const tier = getTier(row);
-      return sum + SEAT_PRICES[tier];
+      const price = customPrices[tier] || SEAT_PRICES[tier];
+      return sum + price;
     }, 0);
-  }, [booking.state.seats]);
+  }, [booking.state.seats, booking.state.seatPrices]);
 
   const snackTotal = useMemo(() => {
     return Object.entries(booking.state.snacks).reduce((sum, [key, count]) => {
@@ -213,6 +215,26 @@ export default function Payment() {
               name: userData?.name || "Customer",
               email: email,
               contact: phone,
+              method: "upi",
+            },
+            config: {
+              display: {
+                blocks: {
+                  upi: {
+                    name: "Pay using QR Code or UPI App",
+                    instruments: [
+                      {
+                        method: "upi",
+                        flows: ["qr", "intent", "collect"],
+                      },
+                    ],
+                  },
+                },
+                sequence: ["block.upi", "block.other"],
+                preferences: {
+                  show_default_blocks: true,
+                },
+              },
             },
             theme: {
               color: "#E11D48",

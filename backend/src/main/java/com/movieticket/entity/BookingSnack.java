@@ -13,10 +13,12 @@ public class BookingSnack {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"snacks", "hibernateLazyInitializer", "handler"})
     private Booking booking;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "snack_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Snack snack;
 
     private Integer quantity;

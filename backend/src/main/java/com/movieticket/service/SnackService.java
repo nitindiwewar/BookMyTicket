@@ -17,6 +17,7 @@ public class SnackService {
     }
 
 
+
     public List<Snack> getAllSnacks() {
         return snackRepository.findAll();
     }
