@@ -243,10 +243,17 @@ export default function LoginModal() {
               return;
             }
             try {
-              const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              });
-              const userInfo = await res.json();
+              let userInfo;
+              try {
+                const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                if (!res.ok) throw new Error(`Google API status ${res.status}`);
+                userInfo = await res.json();
+              } catch (fetchErr) {
+                throw new Error("Failed to fetch Google profile: " + fetchErr.message);
+              }
+
               const user = await googleLogin({
                 email: userInfo.email,
                 name: userInfo.name || userInfo.given_name || userInfo.email.split("@")[0],
@@ -259,7 +266,7 @@ export default function LoginModal() {
                 navigate("/admin");
               }
             } catch (err) {
-              setError("Failed to fetch Google profile: " + err.message);
+              setError(err.message || "Google login failed.");
             } finally {
               setLoading(false);
             }

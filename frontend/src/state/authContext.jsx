@@ -86,12 +86,16 @@ export function AuthProvider({ children }) {
             setUserDataState(mapUserFromResponse(user));
           }
         })
-        .catch(() => {
-          setIsLoggedIn(false);
-          setUserDataState(null);
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
-          localStorage.setItem(AUTH_KEY, "0");
+        .catch((err) => {
+          console.warn("Session check notice:", err?.message);
+          const msg = (err?.message || "").toLowerCase();
+          if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("forbidden") || msg.includes("invalid token")) {
+            setIsLoggedIn(false);
+            setUserDataState(null);
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+            localStorage.setItem(AUTH_KEY, "0");
+          }
         });
     }
   }, [isLoggedIn]);

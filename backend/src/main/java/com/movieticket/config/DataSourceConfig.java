@@ -42,23 +42,14 @@ public class DataSourceConfig {
                 URI uri = new URI(jdbcUrl);
                 String host = uri.getHost();
                 int port = uri.getPort() != -1 ? uri.getPort() : 3306;
-                String path = uri.getPath() != null ? uri.getPath() : "/movieticket";
+                String path = uri.getPath() != null ? uri.getPath() : "/defaultdb";
                 if (path.startsWith("/")) path = path.substring(1);
+                if (path.isEmpty()) path = "defaultdb";
 
-                String query = uri.getQuery();
                 StringBuilder sb = new StringBuilder();
                 sb.append("jdbc:mysql://").append(host).append(":").append(port).append("/").append(path);
+                sb.append("?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=true&sslMode=REQUIRED");
 
-                if (query != null && !query.isEmpty()) {
-                    String cleanQuery = query.replace("ssl-mode=REQUIRED", "sslmode=require")
-                                             .replace("ssl-mode=required", "sslmode=require");
-                    sb.append("?").append(cleanQuery);
-                    if (!cleanQuery.contains("allowPublicKeyRetrieval")) {
-                        sb.append("&allowPublicKeyRetrieval=true");
-                    }
-                } else {
-                    sb.append("?sslmode=require&allowPublicKeyRetrieval=true");
-                }
                 jdbcUrl = sb.toString();
 
                 if (uri.getUserInfo() != null) {
@@ -70,7 +61,7 @@ public class DataSourceConfig {
                         finalPassword = parts[1];
                     }
                 }
-                log.info("Normalized database URL from standard URI into JDBC URL: {}", jdbcUrl);
+                log.info("Normalized database URL to: {}", jdbcUrl);
             } catch (Exception e) {
                 log.warn("Could not parse database URI ({}), falling back to direct prefix", e.getMessage());
                 if (!jdbcUrl.startsWith("jdbc:")) {
@@ -87,6 +78,8 @@ public class DataSourceConfig {
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(2);
         config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
         return new HikariDataSource(config);
     }
 }
