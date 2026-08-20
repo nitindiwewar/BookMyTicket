@@ -150,4 +150,10 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAnalytics() {
         return ResponseEntity.ok(ApiResponse.ok(adminService.getAnalyticsData()));
     }
+
+    // --- Live Real-Time Notifications for Registrations and Bookings ---
+    @GetMapping("/notifications")
+    public ResponseEntity<ApiResponse<List<AdminDTO.AdminNotificationDTO>>> getNotifications() {
+        return ResponseEntity.ok(ApiResponse.ok(adminService.getRecentNotifications()));
+    }
 }

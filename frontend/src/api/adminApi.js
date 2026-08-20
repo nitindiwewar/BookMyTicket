@@ -147,3 +147,9 @@ export async function getAdminAnalyticsApi() {
   const res = await apiClient("/admin/analytics");
   return res || {};
 }
+
+// Live Notifications Stream
+export async function getAdminNotificationsApi() {
+  const res = await apiClient("/admin/notifications", { skipCache: true });
+  return res || [];
+}

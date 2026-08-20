@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   LayoutDashboard, Users, Film, MapPin, Calendar, Ticket, CreditCard,
   TrendingUp, Plus, Trash2, Edit, ShieldCheck, CheckCircle2, AlertTriangle,
   Search, RefreshCw, X, ChevronRight, UserPlus, FileText, ArrowUpRight, BarChart3,
-  Eye, Receipt, Printer, Ban, LogOut
+  Eye, Receipt, Printer, Ban, LogOut, Bell, BellRing, CheckCheck, Clock, Sparkles
 } from "lucide-react";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -21,7 +21,7 @@ import {
   getAdminShowsApi, createAdminShowApi, updateAdminShowApi, deleteAdminShowApi,
   getAdminUsersApi, createAdminUserApi, updateAdminUserRoleApi, updateAdminUserVerificationApi, deleteAdminUserApi,
   getAdminBookingsApi, createAdminSampleBookingApi, updateAdminBookingStatusApi, deleteAdminBookingApi,
-  getAdminAnalyticsApi
+  getAdminAnalyticsApi, getAdminNotificationsApi
 } from "../api/adminApi.js";
 
 const NAV_MODULES = [
@@ -81,6 +81,22 @@ export default function AdminDashboard() {
 
   const [selectedBookingModal, setSelectedBookingModal] = useState(null);
 
+  // Live Notifications State
+  const [notifications, setNotifications] = useState([]);
+  const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState("ALL");
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem("bmt_admin_read_notifs");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const notifDropdownRef = useRef(null);
+  const isInitialNotifFetch = useRef(true);
+  const previousNotifIds = useRef(new Set());
+
   // Fetch data
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -107,9 +123,120 @@ export default function AdminDashboard() {
     }
   }, [showToast]);
 
+  const loadNotifications = useCallback(async (isPolling = false) => {
+    try {
+      const list = await getAdminNotificationsApi();
+      setNotifications(list || []);
+
+      // If new notifications arrived during live polling
+      if (!isInitialNotifFetch.current && isPolling && list && list.length > 0) {
+        const latestNotifs = list.filter(n => !previousNotifIds.current.has(n.id));
+        if (latestNotifs.length > 0) {
+          const newest = latestNotifs[0];
+          showToast(`🔔 ${newest.title}: ${newest.message}`, "info");
+          // Refresh background statistics silently
+          getAdminStatsApi().then(st => st && setStats(st)).catch(() => {});
+          getAdminBookingsApi().then(b => b && setBookings(b)).catch(() => {});
+          getAdminUsersApi().then(u => u && setUsers(u)).catch(() => {});
+        }
+      }
+
+      if (list && list.length > 0) {
+        previousNotifIds.current = new Set(list.map(n => n.id));
+      }
+      isInitialNotifFetch.current = false;
+    } catch {
+      // ignore transient error
+    }
+  }, [showToast]);
+
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadNotifications(false);
+  }, [loadData, loadNotifications]);
+
+  // Live periodic polling for real-time registrations and bookings (every 10 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadNotifications(true);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [loadNotifications]);
+
+  // Close notifications dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
+        setIsNotifDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const unreadNotifCount = useMemo(() => {
+    return notifications.filter(n => !readNotifIds.has(n.id)).length;
+  }, [notifications, readNotifIds]);
+
+  const filteredNotifications = useMemo(() => {
+    if (notifFilter === "BOOKINGS") {
+      return notifications.filter(n => n.type.includes("BOOKING"));
+    }
+    if (notifFilter === "USERS") {
+      return notifications.filter(n => n.type === "USER_REGISTERED");
+    }
+    return notifications;
+  }, [notifications, notifFilter]);
+
+  const handleMarkAllRead = () => {
+    const allIds = new Set([...readNotifIds, ...notifications.map(n => n.id)]);
+    setReadNotifIds(allIds);
+    try {
+      localStorage.setItem("bmt_admin_read_notifs", JSON.stringify(Array.from(allIds)));
+    } catch {}
+    showToast("All notifications marked as read", "success");
+  };
+
+  const handleNotificationClick = (notif) => {
+    const updated = new Set(readNotifIds);
+    updated.add(notif.id);
+    setReadNotifIds(updated);
+    try {
+      localStorage.setItem("bmt_admin_read_notifs", JSON.stringify(Array.from(updated)));
+    } catch {}
+    setIsNotifDropdownOpen(false);
+
+    if (notif.type.includes("BOOKING")) {
+      const foundBooking = bookings.find(b => b.bookingCode === notif.linkId);
+      if (foundBooking) {
+        setSelectedBookingModal(foundBooking);
+      } else {
+        setActiveModule("bookings");
+        setSearchQuery(notif.linkId || "");
+      }
+    } else if (notif.type === "USER_REGISTERED") {
+      setActiveModule("users");
+      const foundUser = users.find(u => String(u.id) === String(notif.linkId));
+      if (foundUser) {
+        setSearchQuery(foundUser.email || foundUser.name || "");
+      }
+    }
+  };
+
+  const formatTimeAgo = (isoString) => {
+    if (!isoString) return "Recently";
+    try {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffSec = Math.floor((now - date) / 1000);
+      if (diffSec < 45) return "Just now";
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+      return `${Math.floor(diffSec / 86400)}d ago`;
+    } catch {
+      return "Recently";
+    }
+  };
 
   // Handlers
   const handleSaveUser = async (e) => {
@@ -395,6 +522,170 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Real-time Notification Bell Popover */}
+            <div className="relative" ref={notifDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
+                className={`relative flex items-center justify-center h-9 w-9 rounded-xl border transition cursor-pointer ${
+                  isNotifDropdownOpen
+                    ? "bg-[#FF1744] text-white border-[#FF1744] shadow-md shadow-red-500/20"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+                title="System Notifications"
+              >
+                {unreadNotifCount > 0 ? (
+                  <BellRing className="h-4 w-4 animate-bounce text-[#FF1744] group-hover:text-white" />
+                ) : (
+                  <Bell className="h-4 w-4" />
+                )}
+
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#FF1744] px-1 text-[10px] font-black text-white shadow-sm ring-2 ring-white">
+                    {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Popover Dropdown Tray */}
+              {isNotifDropdownOpen && (
+                <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Tray Header */}
+                  <div className="flex items-center justify-between p-4 bg-slate-900 text-white">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <h4 className="text-xs font-black tracking-tight text-white uppercase">Live Activity Feed</h4>
+                      {unreadNotifCount > 0 && (
+                        <span className="rounded-md bg-[#FF1744] px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+                          {unreadNotifCount} New
+                        </span>
+                      )}
+                    </div>
+                    {unreadNotifCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="text-[11px] font-bold text-rose-300 hover:text-white flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <CheckCheck className="h-3.5 w-3.5" />
+                        <span>Mark read</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex items-center gap-1 p-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("ALL")}
+                      className={`flex-1 py-1 px-2 rounded-lg transition ${
+                        notifFilter === "ALL" ? "bg-white shadow-xs text-[#FF1744] font-black" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      All ({notifications.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("BOOKINGS")}
+                      className={`flex-1 py-1 px-2 rounded-lg transition ${
+                        notifFilter === "BOOKINGS" ? "bg-white shadow-xs text-[#FF1744] font-black" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Bookings ({notifications.filter(n => n.type.includes("BOOKING")).length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifFilter("USERS")}
+                      className={`flex-1 py-1 px-2 rounded-lg transition ${
+                        notifFilter === "USERS" ? "bg-white shadow-xs text-[#FF1744] font-black" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Users ({notifications.filter(n => n.type === "USER_REGISTERED").length})
+                    </button>
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                    {filteredNotifications.length === 0 ? (
+                      <div className="p-8 text-center text-slate-400 space-y-2">
+                        <Bell className="h-8 w-8 mx-auto text-slate-300 stroke-1" />
+                        <p className="text-xs font-semibold">No recent notifications</p>
+                      </div>
+                    ) : (
+                      filteredNotifications.map((notif) => {
+                        const isRead = readNotifIds.has(notif.id);
+                        const isBooking = notif.type.includes("BOOKING");
+                        const isCancelled = notif.type === "BOOKING_CANCELLED";
+
+                        return (
+                          <div
+                            key={notif.id}
+                            onClick={() => handleNotificationClick(notif)}
+                            className={`p-3.5 flex items-start gap-3 transition cursor-pointer hover:bg-slate-50 ${
+                              isRead ? "bg-white opacity-80" : "bg-rose-50/30"
+                            }`}
+                          >
+                            {/* Icon Type */}
+                            <div
+                              className={`h-8 w-8 shrink-0 rounded-xl grid place-items-center text-xs ${
+                                isCancelled
+                                  ? "bg-rose-100 text-rose-600"
+                                  : isBooking
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-purple-100 text-purple-700"
+                              }`}
+                            >
+                              {isCancelled ? (
+                                <AlertTriangle className="h-4 w-4" />
+                              ) : isBooking ? (
+                                <Ticket className="h-4 w-4" />
+                              ) : (
+                                <UserPlus className="h-4 w-4" />
+                              )}
+                            </div>
+
+                            {/* Details */}
+                            <div className="flex-1 min-w-0 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className={`text-xs font-black truncate ${isRead ? "text-slate-700" : "text-slate-900"}`}>
+                                  {notif.title}
+                                </span>
+                                {!isRead && (
+                                  <span className="h-2 w-2 rounded-full bg-[#FF1744] shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-600 font-medium line-clamp-2 leading-relaxed">
+                                {notif.message}
+                              </p>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold pt-0.5">
+                                <Clock className="h-3 w-3" />
+                                <span>{formatTimeAgo(notif.timestamp)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Tray Footer */}
+                  <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                    <span className="flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Auto-pulse every 10s
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { loadNotifications(false); loadData(); }}
+                      className="text-[#FF1744] hover:underline"
+                    >
+                      Sync Now
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button variant="secondary" size="sm" onClick={loadData} disabled={loading} className="gap-2 text-xs font-bold border-slate-200">
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
               <span>Refresh Stats</span>
@@ -496,23 +787,63 @@ export default function AdminDashboard() {
                 </div>
               </Card>
 
-              <Card className="p-5 bg-white border-slate-200/90 shadow-xs space-y-4">
-                <h3 className="text-base font-black text-slate-900">Quick Shortcuts</h3>
-                <div className="space-y-2">
-                  <Button variant="secondary" size="sm" onClick={() => { setActiveModule("users"); setIsUserModalOpen(true); }} className="w-full justify-start gap-2.5 text-xs font-bold py-2.5 border-slate-200">
-                    <UserPlus className="h-4 w-4 text-purple-600" />
-                    <span>Create User Account</span>
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => { setActiveModule("movies"); setIsMovieModalOpen(true); }} className="w-full justify-start gap-2.5 text-xs font-bold py-2.5 border-slate-200">
-                    <Plus className="h-4 w-4 text-amber-600" />
-                    <span>Add New Movie to Catalog</span>
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => { setActiveModule("shows"); setIsShowModalOpen(true); }} className="w-full justify-start gap-2.5 text-xs font-bold py-2.5 border-slate-200">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    <span>Schedule Showtime</span>
-                  </Button>
-                </div>
-              </Card>
+              <div className="space-y-6">
+                <Card className="p-5 bg-white border-slate-200/90 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-black text-slate-900">Quick Actions</h3>
+                    <span className="text-[10px] font-bold text-slate-400">Admin Tools</span>
+                  </div>
+                  <div className="space-y-2">
+                    <Button variant="secondary" size="sm" onClick={() => { setActiveModule("users"); setIsUserModalOpen(true); }} className="w-full justify-start gap-2.5 text-xs font-bold py-2.5 border-slate-200">
+                      <UserPlus className="h-4 w-4 text-purple-600" />
+                      <span>Create User Account</span>
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => { setActiveModule("movies"); setIsMovieModalOpen(true); }} className="w-full justify-start gap-2.5 text-xs font-bold py-2.5 border-slate-200">
+                      <Plus className="h-4 w-4 text-amber-600" />
+                      <span>Add Movie to Catalog</span>
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => { setActiveModule("shows"); setIsShowModalOpen(true); }} className="w-full justify-start gap-2.5 text-xs font-bold py-2.5 border-slate-200">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <span>Schedule Showtime</span>
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* Live Activity Feed Widget */}
+                <Card className="p-5 bg-white border-slate-200/90 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Live System Stream</h4>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#FF1744]">Real-time</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {notifications.slice(0, 4).map((n) => {
+                      const isBooking = n.type.includes("BOOKING");
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => handleNotificationClick(n)}
+                          className="flex items-start gap-2.5 p-2 rounded-xl bg-slate-50 hover:bg-rose-50/50 border border-slate-100 transition cursor-pointer"
+                        >
+                          <div className={`h-6 w-6 rounded-lg grid place-items-center shrink-0 text-xs ${
+                            isBooking ? "bg-emerald-100 text-emerald-700" : "bg-purple-100 text-purple-700"
+                          }`}>
+                            {isBooking ? <Ticket className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-black text-slate-900 truncate">{n.title}</p>
+                            <p className="text-[10px] text-slate-500 line-clamp-1">{n.message}</p>
+                          </div>
+                          <span className="text-[9px] font-bold text-slate-400 shrink-0">{formatTimeAgo(n.timestamp)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         )}

@@ -397,4 +397,58 @@ public class AdminService {
         result.put("totalBookingsCount", bookings.size());
         return result;
     }
+
+    // --- Real-time Notifications for New Users and Bookings ---
+    public List<AdminDTO.AdminNotificationDTO> getRecentNotifications() {
+        List<AdminDTO.AdminNotificationDTO> list = new ArrayList<>();
+
+        // 1. Recent Bookings Stream
+        List<Booking> recentBookings = bookingRepository.findAll().stream()
+                .filter(b -> b.getCreatedAt() != null)
+                .sorted(Comparator.comparing(Booking::getCreatedAt, Comparator.reverseOrder()))
+                .limit(15)
+                .collect(Collectors.toList());
+
+        for (Booking b : recentBookings) {
+            String movieTitle = (b.getShow() != null && b.getShow().getMovie() != null) ? b.getShow().getMovie().getTitle() : "Movie";
+            String cust = (b.getUser() != null && b.getUser().getName() != null) ? b.getUser().getName() : (b.getCustomerEmail() != null ? b.getCustomerEmail().split("@")[0] : "Customer");
+            String type = b.getStatus() == Booking.BookingStatus.CANCELLED ? "BOOKING_CANCELLED" : "BOOKING_CREATED";
+            String title = b.getStatus() == Booking.BookingStatus.CANCELLED ? "Booking Cancelled" : "New Ticket Booked";
+            String msg = String.format("Booking #%s by %s for %s (%d seats • ₹%s)",
+                    b.getBookingCode(), cust, movieTitle, b.getTotalSeats() != null ? b.getTotalSeats() : 1, b.getTotalAmount() != null ? b.getTotalAmount().toString() : "0");
+
+            list.add(new AdminDTO.AdminNotificationDTO(
+                    "notif-b-" + b.getId(),
+                    type,
+                    title,
+                    msg,
+                    b.getBookingCode(),
+                    b.getCreatedAt() != null ? b.getCreatedAt().toString() : "",
+                    false
+            ));
+        }
+
+        // 2. Recent User Registrations Stream
+        List<User> recentUsers = userRepository.findAll().stream()
+                .filter(u -> u.getCreatedAt() != null)
+                .sorted(Comparator.comparing(User::getCreatedAt, Comparator.reverseOrder()))
+                .limit(15)
+                .collect(Collectors.toList());
+
+        for (User u : recentUsers) {
+            list.add(new AdminDTO.AdminNotificationDTO(
+                    "notif-u-" + u.getId(),
+                    "USER_REGISTERED",
+                    "New User Registration",
+                    String.format("%s (%s) created an account", u.getName() != null ? u.getName() : "New User", u.getEmail() != null ? u.getEmail() : (u.getMobile() != null ? u.getMobile() : "Account")),
+                    String.valueOf(u.getId()),
+                    u.getCreatedAt() != null ? u.getCreatedAt().toString() : "",
+                    false
+            ));
+        }
+
+        // Combined stream sorted chronologically descending
+        list.sort((a, b) -> (b.getTimestamp() != null && a.getTimestamp() != null) ? b.getTimestamp().compareTo(a.getTimestamp()) : 0);
+        return list.stream().limit(25).collect(Collectors.toList());
+    }
 }
