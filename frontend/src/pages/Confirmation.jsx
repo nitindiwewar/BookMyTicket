@@ -224,6 +224,10 @@ export default function Confirmation() {
                 <span>Method:</span>
                 <span className="font-bold text-slate-900 uppercase">{backendBooking?.paymentMethod || booking.state.paymentMethod || "Razorpay / UPI"}</span>
               </div>
+              <div className="flex items-center justify-between text-xs font-bold text-emerald-900 pt-1.5 border-t border-emerald-200">
+                <span>Total Amount Paid:</span>
+                <span className="text-sm font-black text-emerald-900">{formatCurrency(backendBooking?.totalAmount || 0)}</span>
+              </div>
             </div>
           </div>
 

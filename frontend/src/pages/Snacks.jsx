@@ -144,7 +144,7 @@ export default function Snacks() {
                     <button
                       type="button"
                       disabled={!qty}
-                      onClick={() => booking.setSnackQty(s.id, Math.max(0, qty - 1))}
+                      onClick={() => booking.setSnackItem(s, Math.max(0, qty - 1))}
                       className="flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-30 transition cursor-pointer"
                     >
                       <Minus className="h-3.5 w-3.5" />
@@ -154,7 +154,7 @@ export default function Snacks() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => booking.setSnackQty(s.id, qty + 1)}
+                      onClick={() => booking.setSnackItem(s, qty + 1)}
                       className="flex h-7 w-7 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5" />

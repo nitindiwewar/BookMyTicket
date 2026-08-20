@@ -384,7 +384,7 @@ export default function Theaters() {
                         >
                           <span>{formatTime(show.time)}</span>
                           <span className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] py-0.5 px-2 rounded-md whitespace-nowrap pointer-events-none z-20 shadow-lg">
-                            ₹{show.basePrice || 300} • 2D / 4DX
+                            ₹180 - ₹450 • Silver/Gold/Recliner
                           </span>
                         </button>
                       );
@@ -399,7 +399,7 @@ export default function Theaters() {
                         date: selectedDate,
                         movieId: targetMovieId,
                         theaterId: theater.id,
-                        basePrice: 300 
+                        basePrice: 180 
                       };
                       const isFast = idx % 2 === 1;
                       return (
@@ -414,7 +414,7 @@ export default function Theaters() {
                         >
                           <span>{formatTime(t)}</span>
                           <span className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] py-0.5 px-2 rounded-md whitespace-nowrap pointer-events-none z-20 shadow-lg">
-                            ₹300 • 2D / 4DX
+                            ₹180 - ₹450 • Silver/Gold/Recliner
                           </span>
                         </button>
                       );

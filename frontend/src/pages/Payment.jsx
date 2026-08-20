@@ -132,14 +132,29 @@ export default function Payment() {
     return seatTierBreakdown.reduce((sum, item) => sum + item.total, 0);
   }, [seatTierBreakdown]);
 
-  const snackTotal = useMemo(() => {
-    return Object.entries(booking.state.snacks).reduce((sum, [key, count]) => {
-      return sum + (SNACK_PRICES[key] || 0) * count;
-    }, 0);
-  }, [booking.state.snacks]);
+  const snackList = useMemo(() => {
+    const details = booking.state.snackDetails || {};
+    const rawSnacks = booking.state.snacks || {};
+    return Object.entries(rawSnacks)
+      .filter(([_, qty]) => qty > 0)
+      .map(([id, qty]) => {
+        const info = details[id] || {};
+        const name = info.name || id;
+        const price = Number(info.price) || (SNACK_PRICES[name] || SNACK_PRICES[id] || 250);
+        const imageUrl = info.imageUrl || SNACK_THUMBS[name] || SNACK_THUMBS.Popcorn;
+        const total = price * qty;
+        return { id, name, price, qty, imageUrl, total };
+      });
+  }, [booking.state.snacks, booking.state.snackDetails]);
 
-  const fee = 30;
-  const subtotal = ticketTotal + snackTotal + fee;
+  const snackTotal = useMemo(() => {
+    return snackList.reduce((sum, item) => sum + item.total, 0);
+  }, [snackList]);
+
+  const subtotalBeforeFee = ticketTotal + snackTotal;
+  // 6% Convenience Fee (matching backend BookingService.java calculation)
+  const fee = Math.round(subtotalBeforeFee * 0.06 * 100) / 100;
+  const subtotal = subtotalBeforeFee + fee;
   const finalTotal = Math.max(0, subtotal - discount);
 
   const applyCouponCode = async (codeToApply) => {
@@ -531,28 +546,31 @@ export default function Payment() {
             </div>
 
             {/* Pre-ordered Snack Items with Thumbnails */}
-            {Object.entries(booking.state.snacks).some(([_, count]) => count > 0) && (
+            {snackList.length > 0 && (
               <div className="space-y-2 border-t border-slate-100 pt-3">
-                <div className="text-xs font-bold text-slate-700">Pre-ordered Concessions:</div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Pre-ordered Concessions:</span>
+                  <span className="text-[#FF1744] font-black">{formatCurrency(snackTotal)}</span>
+                </div>
                 <div className="space-y-2">
-                  {Object.entries(booking.state.snacks).map(([name, count]) => {
-                    if (!count) return null;
-                    return (
-                      <div key={name} className="flex items-center justify-between text-xs font-medium bg-slate-50 p-2 rounded-xl">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={SNACK_THUMBS[name] || SNACK_THUMBS.Popcorn}
-                            alt={name}
-                            className="h-8 w-8 rounded-lg object-cover"
-                          />
-                          <span>{name} x {count}</span>
+                  {snackList.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between text-xs font-medium bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-8 w-8 rounded-lg object-cover border border-slate-200 shrink-0"
+                        />
+                        <div>
+                          <div className="font-bold text-slate-800 line-clamp-1">{item.name}</div>
+                          <div className="text-[10px] text-slate-400 font-semibold">{item.qty} x ₹{item.price}</div>
                         </div>
-                        <span className="font-bold text-slate-900">
-                          {formatCurrency((SNACK_PRICES[name] || 0) * count)}
-                        </span>
                       </div>
-                    );
-                  })}
+                      <span className="font-black text-slate-900 shrink-0">
+                        {formatCurrency(item.total)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

@@ -22,6 +22,7 @@ const initialState = {
   seatTier: null,
   seatPrices: {},
   snacks: {}, // { snackId: qty }
+  snackDetails: {}, // { snackId: { id, name, price, qty, imageUrl } }
   coupon: "",
   paymentMethod: "",
   bookingResponse: null,
@@ -115,12 +116,44 @@ export function BookingProvider({ children }) {
       setSeatPrices(seatPrices) {
         setState((s) => ({ ...s, seatPrices: { ...s.seatPrices, ...seatPrices } }));
       },
+      setSnackItem(snack, qty) {
+        if (!snack) return;
+        const id = typeof snack === "object" ? snack.id : snack;
+        setState((s) => {
+          const snacks = { ...s.snacks };
+          const snackDetails = { ...(s.snackDetails || {}) };
+          if (!qty || qty <= 0) {
+            delete snacks[id];
+            delete snackDetails[id];
+          } else {
+            snacks[id] = qty;
+            if (typeof snack === "object") {
+              snackDetails[id] = {
+                id: snack.id,
+                name: snack.name,
+                price: Number(snack.price) || 0,
+                imageUrl: snack.imageUrl || snack.image || "",
+                qty: qty,
+              };
+            }
+          }
+          return { ...s, snacks, snackDetails };
+        });
+      },
       setSnackQty(snackId, qty) {
         setState((s) => {
           const snacks = { ...s.snacks };
-          if (!qty) delete snacks[snackId];
-          else snacks[snackId] = qty;
-          return { ...s, snacks };
+          const snackDetails = { ...(s.snackDetails || {}) };
+          if (!qty || qty <= 0) {
+            delete snacks[snackId];
+            delete snackDetails[snackId];
+          } else {
+            snacks[snackId] = qty;
+            if (snackDetails[snackId]) {
+              snackDetails[snackId] = { ...snackDetails[snackId], qty };
+            }
+          }
+          return { ...s, snacks, snackDetails };
         });
       },
       setCoupon(coupon) {
