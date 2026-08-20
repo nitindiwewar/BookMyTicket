@@ -100,7 +100,7 @@ public class ShowService {
         ).collect(Collectors.toList());
     }
 
-    private List<ShowSeat> initializeSeatsForShow(Show show) {
+    public List<ShowSeat> initializeSeatsForShow(Show show) {
         List<ShowSeat> seats = new ArrayList<>();
         char[] rows = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 

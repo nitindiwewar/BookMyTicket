@@ -23,6 +23,7 @@ import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import Badge from "../components/ui/Badge.jsx";
 import MovieCard, { trackRecentlyViewed } from "../components/MovieCard.jsx";
+import { formatDuration } from "../utils/formatters.js";
 import { getMovieById, getMovies } from "../api/movieApi.js";
 import { getTheaters } from "../api/theaterApi.js";
 import { useBooking } from "../state/bookingContext.jsx";
@@ -150,13 +151,6 @@ export default function MovieDetails() {
       .filter((m) => m.id !== movie.id && m.genre?.some((g) => movie.genre?.includes(g)))
       .slice(0, 6);
   }, [movie, moviesList]);
-
-  const formatDuration = (mins) => {
-    if (!mins) return "2h 25m";
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h}h ${m}m`;
-  };
 
   const handleShare = () => {
     if (navigator.share) {

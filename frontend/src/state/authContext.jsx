@@ -52,6 +52,23 @@ function getInitialUserData() {
   }
 }
 
+function mapUserFromResponse(res, fallbackRole = "ROLE_USER") {
+  if (!res) return null;
+  return {
+    id: res.id,
+    name: res.name,
+    email: res.email,
+    mobile: res.mobile,
+    countryCode: res.countryCode || "+91",
+    dob: res.dob,
+    age: res.age,
+    gender: res.gender,
+    role: res.role || fallbackRole,
+    emailVerified: Boolean(res.emailVerified),
+    mobileVerified: Boolean(res.mobileVerified),
+  };
+}
+
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(getInitialAuth);
   const [userData, setUserDataState] = useState(getInitialUserData);
@@ -66,19 +83,7 @@ export function AuthProvider({ children }) {
       getCurrentUserApi()
         .then((user) => {
           if (user) {
-            setUserDataState({
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              mobile: user.mobile,
-              countryCode: user.countryCode || "+91",
-              dob: user.dob,
-              age: user.age,
-              gender: user.gender,
-              role: user.role || "ROLE_USER",
-              emailVerified: Boolean(user.emailVerified),
-              mobileVerified: Boolean(user.mobileVerified),
-            });
+            setUserDataState(mapUserFromResponse(user));
           }
         })
         .catch(() => {
@@ -117,19 +122,8 @@ export function AuthProvider({ children }) {
 
   const verifyOtp = useCallback(async (mobile, countryCode = "+91", otp) => {
     const res = await verifyOtpApi(mobile, countryCode, otp);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || "ROLE_USER",
-      emailVerified: Boolean(res.emailVerified),
-      mobileVerified: true,
-    };
+    const user = mapUserFromResponse(res);
+    if (user) user.mobileVerified = true;
     const isNew = res.isNewUser || res.newUser || !res.name || res.name.startsWith("User_") || !res.email;
     if (!isNew) {
       setIsLoggedIn(true);
@@ -140,19 +134,7 @@ export function AuthProvider({ children }) {
 
   const completeProfile = useCallback(async (profileData) => {
     const res = await completeProfileApi(profileData);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || "ROLE_USER",
-      emailVerified: Boolean(res.emailVerified),
-      mobileVerified: Boolean(res.mobileVerified),
-    };
+    const user = mapUserFromResponse(res);
     setIsLoggedIn(true);
     setUserDataState(user);
     return user;
@@ -165,19 +147,7 @@ export function AuthProvider({ children }) {
       return emailOrData;
     }
     const res = await loginApi(emailOrData, password);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || "ROLE_USER",
-      emailVerified: Boolean(res.emailVerified),
-      mobileVerified: Boolean(res.mobileVerified),
-    };
+    const user = mapUserFromResponse(res);
     setIsLoggedIn(true);
     setUserDataState(user);
     return user;
@@ -185,19 +155,7 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (registerData) => {
     const res = await registerApi(registerData);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || "ROLE_USER",
-      emailVerified: Boolean(res.emailVerified),
-      mobileVerified: Boolean(res.mobileVerified),
-    };
+    const user = mapUserFromResponse(res);
     setIsLoggedIn(true);
     setUserDataState(user);
     return user;
@@ -205,19 +163,10 @@ export function AuthProvider({ children }) {
 
   const googleLogin = useCallback(async (googleData) => {
     const res = await googleLoginApi(googleData);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || "ROLE_USER",
-      emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
-      mobileVerified: res.mobileVerified,
-    };
+    const user = mapUserFromResponse(res);
+    if (user && res.emailVerified !== undefined) {
+      user.emailVerified = res.emailVerified;
+    }
     setIsLoggedIn(true);
     setUserDataState(user);
     return user;
@@ -225,19 +174,7 @@ export function AuthProvider({ children }) {
 
   const updateProfile = useCallback(async (profileData) => {
     const res = await updateProfileApi(profileData);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || userData?.role || "ROLE_USER",
-      emailVerified: res.emailVerified,
-      mobileVerified: res.mobileVerified,
-    };
+    const user = mapUserFromResponse(res, userData?.role || "ROLE_USER");
     setUserDataState(user);
     return user;
   }, [userData]);
@@ -248,19 +185,8 @@ export function AuthProvider({ children }) {
 
   const verifyEmailOtp = useCallback(async (email, otp) => {
     const res = await verifyEmailOtpApi(email, otp);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || userData?.role || "ROLE_USER",
-      emailVerified: true,
-      mobileVerified: res.mobileVerified,
-    };
+    const user = mapUserFromResponse(res, userData?.role || "ROLE_USER");
+    if (user) user.emailVerified = true;
     setUserDataState(user);
     return user;
   }, [userData]);
@@ -271,19 +197,8 @@ export function AuthProvider({ children }) {
 
   const verifyMobileOtp = useCallback(async (mobile, otp) => {
     const res = await verifyMobileOtpApi(mobile, otp);
-    const user = {
-      id: res.id,
-      name: res.name,
-      email: res.email,
-      mobile: res.mobile,
-      countryCode: res.countryCode,
-      dob: res.dob,
-      age: res.age,
-      gender: res.gender,
-      role: res.role || userData?.role || "ROLE_USER",
-      emailVerified: res.emailVerified,
-      mobileVerified: true,
-    };
+    const user = mapUserFromResponse(res, userData?.role || "ROLE_USER");
+    if (user) user.mobileVerified = true;
     setUserDataState(user);
     return user;
   }, [userData]);

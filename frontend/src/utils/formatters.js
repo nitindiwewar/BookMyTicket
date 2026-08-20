@@ -60,3 +60,34 @@ export function formatNumber(val) {
 export function getUnique(arr) {
   return Array.from(new Set(arr));
 }
+
+/**
+ * Formats runtime duration in minutes into 'Xh Ym' string
+ * @param {number} mins - Runtime in minutes
+ * @returns {string} Formatted duration (e.g., '2h 15m')
+ */
+export function formatDuration(mins) {
+  if (!mins) return "—";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
+}
+
+/**
+ * Calculates current age from date of birth string
+ * @param {string} dobString - Date of birth in YYYY-MM-DD format
+ * @returns {number|string} Calculated age or empty string
+ */
+export function calculateAgeFromDob(dobString) {
+  if (!dobString) return "";
+  const birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime())) return "";
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age > 0 ? age : "";
+}
+

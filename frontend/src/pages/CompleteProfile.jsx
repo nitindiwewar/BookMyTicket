@@ -7,6 +7,7 @@ import LoadingButton from "../components/auth/LoadingButton.jsx";
 import SuccessAnimation from "../components/auth/SuccessAnimation.jsx";
 import { useAuth } from "../state/authContext.jsx";
 import Input from "../components/ui/Input.jsx";
+import { calculateAgeFromDob } from "../utils/formatters.js";
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -35,14 +36,8 @@ export default function CompleteProfile() {
   const handleDobChange = (dateVal) => {
     setDob(dateVal);
     if (dateVal) {
-      const birth = new Date(dateVal);
-      const today = new Date();
-      let calculatedAge = today.getFullYear() - birth.getFullYear();
-      const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        calculatedAge--;
-      }
-      if (calculatedAge >= 0 && calculatedAge < 120) {
+      const calculatedAge = calculateAgeFromDob(dateVal);
+      if (calculatedAge !== "" && calculatedAge >= 0 && calculatedAge < 120) {
         setAge(String(calculatedAge));
       }
     }

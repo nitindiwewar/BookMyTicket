@@ -63,19 +63,8 @@ public class AuthService {
 
     @Transactional
     public AuthDTO.AuthResponse verifyOtp(AuthDTO.VerifyOtpRequest request) {
-        if (request.getOtp() == null || request.getOtp().length() != 6) {
-            throw new BadRequestException("Please enter a valid 6-digit OTP code");
-        }
-
         String mobile = request.getMobile().trim();
-        String storedOtp = otpStore.get(mobile);
-
-        boolean isValid = (storedOtp != null && storedOtp.equals(request.getOtp())) || "123456".equals(request.getOtp());
-        if (!isValid) {
-            throw new BadRequestException("Invalid OTP code. Please check and try again.");
-        }
-
-        otpStore.remove(mobile);
+        validateAndConsumeOtp(mobile, request.getOtp());
 
         List<User> users = userRepository.findAllByMobile(mobile);
         boolean isNewUser = false;
@@ -103,24 +92,7 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        String token = jwtUtils.generateToken(user.getEmail() != null ? user.getEmail() : user.getMobile());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(isNewUser)
-                .emailVerified(user.getEmailVerified())
-                .mobileVerified(user.getMobileVerified())
-                .build();
+        return buildAuthResponse(user, isNewUser);
     }
 
     @Transactional
@@ -139,23 +111,7 @@ public class AuthService {
         if (request.getGender() != null) user.setGender(request.getGender().trim());
 
         userRepository.save(user);
-
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(false)
-                .build();
+        return buildAuthResponse(user, false);
     }
 
     @Transactional
@@ -182,23 +138,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(false)
-                .build();
+        return buildAuthResponse(user, false);
     }
 
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
@@ -214,22 +154,7 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(false)
-                .build();
+        return buildAuthResponse(user, false);
     }
 
     public User getUserByEmail(String email) {
@@ -265,24 +190,7 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(isNewUser)
-                .emailVerified(true)
-                .mobileVerified(user.getMobileVerified())
-                .build();
+        return buildAuthResponse(user, isNewUser);
     }
 
     private Integer calculateAgeFromDob(String dob) {
@@ -334,24 +242,7 @@ public class AuthService {
         user.setGender(request.getGender().trim());
 
         userRepository.save(user);
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(false)
-                .emailVerified(user.getEmailVerified())
-                .mobileVerified(user.getMobileVerified())
-                .build();
+        return buildAuthResponse(user, false);
     }
 
     public String sendEmailOtp(AuthDTO.SendEmailOtpRequest request) {
@@ -373,24 +264,7 @@ public class AuthService {
         user.setEmailVerified(true);
         userRepository.save(user);
 
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        return AuthDTO.AuthResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .mobile(user.getMobile())
-                .countryCode(user.getCountryCode())
-                .dob(user.getDob())
-                .age(user.getAge())
-                .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(false)
-                .emailVerified(true)
-                .mobileVerified(user.getMobileVerified())
-                .build();
+        return buildAuthResponse(user, false);
     }
 
     public String sendMobileOtpForVerification(AuthDTO.SendMobileOtpRequest request) {
@@ -400,14 +274,7 @@ public class AuthService {
     @Transactional
     public AuthDTO.AuthResponse verifyMobileOtp(AuthDTO.VerifyMobileOtpRequest request) {
         String mobile = request.getMobile().trim();
-        String storedOtp = otpStore.get(mobile);
-
-        boolean isValid = (storedOtp != null && storedOtp.equals(request.getOtp())) || "123456".equals(request.getOtp());
-        if (!isValid) {
-            throw new BadRequestException("Invalid OTP code. Please check and try again.");
-        }
-
-        otpStore.remove(mobile);
+        validateAndConsumeOtp(mobile, request.getOtp());
 
         List<User> users = userRepository.findAllByMobile(mobile);
         if (users.isEmpty()) {
@@ -418,7 +285,28 @@ public class AuthService {
         user.setMobileVerified(true);
         userRepository.save(user);
 
-        String token = jwtUtils.generateToken(user.getEmail() != null ? user.getEmail() : user.getMobile());
+        return buildAuthResponse(user, false);
+    }
+
+    private void validateAndConsumeOtp(String mobile, String otp) {
+        if (otp == null || otp.trim().length() != 6) {
+            throw new BadRequestException("Please enter a valid 6-digit OTP code");
+        }
+
+        String storedOtp = otpStore.get(mobile);
+        boolean isValid = (storedOtp != null && storedOtp.equals(otp.trim())) || "123456".equals(otp.trim());
+        if (!isValid) {
+            throw new BadRequestException("Invalid OTP code. Please check and try again.");
+        }
+
+        otpStore.remove(mobile);
+    }
+
+    private AuthDTO.AuthResponse buildAuthResponse(User user, boolean isNewUser) {
+        String subject = (user.getEmail() != null && !user.getEmail().trim().isEmpty())
+                ? user.getEmail()
+                : user.getMobile();
+        String token = jwtUtils.generateToken(subject);
 
         return AuthDTO.AuthResponse.builder()
                 .token(token)
@@ -431,10 +319,10 @@ public class AuthService {
                 .dob(user.getDob())
                 .age(user.getAge())
                 .gender(user.getGender())
-                .role(user.getRole().name())
-                .isNewUser(false)
+                .role(user.getRole() != null ? user.getRole().name() : User.Role.ROLE_USER.name())
+                .isNewUser(isNewUser)
                 .emailVerified(user.getEmailVerified())
-                .mobileVerified(true)
+                .mobileVerified(user.getMobileVerified())
                 .build();
     }
 }

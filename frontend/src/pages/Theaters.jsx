@@ -11,6 +11,7 @@ import { getMovieById } from "../api/movieApi.js";
 import { getTheaters, getShows } from "../api/theaterApi.js";
 import { useBooking } from "../state/bookingContext.jsx";
 import { useLocationCity } from "../state/locationContext.jsx";
+import { formatDuration } from "../utils/formatters.js";
 
 const THEATER_GPS = {
   // Hyderabad
@@ -238,7 +239,7 @@ export default function Theaters() {
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                Movie runtime: {movie.runtimeMins ? `${Math.floor(movie.runtimeMins/60)}h ${movie.runtimeMins%60}m` : "2h 15m"}
+                Movie runtime: {formatDuration(movie.runtimeMins)}
               </span>
               <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
                 {movie.certification || "UA13+"}

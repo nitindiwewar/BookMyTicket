@@ -25,8 +25,9 @@ public class BookingService {
     private final UserRepository userRepository;
     private final CouponService couponService;
     private final RazorpayService razorpayService;
+    private final ShowService showService;
 
-    public BookingService(BookingRepository bookingRepository, ShowRepository showRepository, ShowSeatRepository showSeatRepository, SnackRepository snackRepository, UserRepository userRepository, CouponService couponService, RazorpayService razorpayService) {
+    public BookingService(BookingRepository bookingRepository, ShowRepository showRepository, ShowSeatRepository showSeatRepository, SnackRepository snackRepository, UserRepository userRepository, CouponService couponService, RazorpayService razorpayService, ShowService showService) {
         this.bookingRepository = bookingRepository;
         this.showRepository = showRepository;
         this.showSeatRepository = showSeatRepository;
@@ -34,6 +35,7 @@ public class BookingService {
         this.userRepository = userRepository;
         this.couponService = couponService;
         this.razorpayService = razorpayService;
+        this.showService = showService;
     }
 
 
@@ -81,7 +83,7 @@ public class BookingService {
             // trigger show seat generation
             List<ShowSeat> allSeats = showSeatRepository.findByShowId(show.getId());
             if (allSeats.isEmpty()) {
-                initializeSeats(show);
+                showService.initializeSeatsForShow(show);
                 showSeats = showSeatRepository.findByShowIdAndSeatNumberIn(show.getId(), requestedSeatNums);
             }
         }
@@ -213,28 +215,6 @@ public class BookingService {
             }
         }
         return bookings.stream().map(this::mapToResponse).collect(Collectors.toList());
-    }
-
-
-
-    private void initializeSeats(Show show) {
-        List<ShowSeat> seats = new ArrayList<>();
-        char[] rows = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
-        for (char r : rows) {
-            for (int col = 1; col <= 10; col++) {
-                String seatNum = "" + r + col;
-                ShowSeat.SeatTier tier = (r == 'A' || r == 'B') ? ShowSeat.SeatTier.VIP :
-                        (r >= 'C' && r <= 'F') ? ShowSeat.SeatTier.PREMIUM : ShowSeat.SeatTier.REGULAR;
-                seats.add(ShowSeat.builder()
-                        .show(show)
-                        .seatNumber(seatNum)
-                        .tier(tier)
-                        .status(ShowSeat.SeatStatus.AVAILABLE)
-                        .price(show.getBasePrice())
-                        .build());
-            }
-        }
-        showSeatRepository.saveAll(seats);
     }
 
     private BookingResponseDTO mapToResponse(Booking b) {

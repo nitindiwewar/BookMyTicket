@@ -34,7 +34,7 @@ import Badge from "../components/ui/Badge.jsx";
 import Tabs from "../components/ui/Tabs.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
 import { getUserBookingsApi, getMyBookingsApi } from "../api/bookingApi.js";
-import { formatCurrency } from "../utils/formatters.js";
+import { formatCurrency, calculateAgeFromDob } from "../utils/formatters.js";
 
 const TAB_ITEMS = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
@@ -46,19 +46,6 @@ const TAB_ITEMS = [
   { key: "support", label: "Help & Support", icon: HelpCircle },
   { key: "settings", label: "Account Settings", icon: Settings },
 ];
-
-function calculateAgeFromDob(dobString) {
-  if (!dobString) return "";
-  const birthDate = new Date(dobString);
-  if (isNaN(birthDate.getTime())) return "";
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age > 0 ? age : "";
-}
 
 function isUpcomingBooking(booking) {
   if (!booking) return false;
