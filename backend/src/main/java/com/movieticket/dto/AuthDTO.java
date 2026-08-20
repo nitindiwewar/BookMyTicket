@@ -3,7 +3,6 @@ package com.movieticket.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.*;
 
 public class AuthDTO {
 
@@ -324,11 +323,6 @@ public class AuthDTO {
         public void setOtp(String otp) { this.otp = otp; }
     }
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
     public static class AuthResponse {
         private String token;
         private String type;

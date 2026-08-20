@@ -25,7 +25,7 @@ const navItems = [
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoggedIn, userData, openLoginModal } = useAuth();
+  const { isLoggedIn, userData, openLoginModal, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
