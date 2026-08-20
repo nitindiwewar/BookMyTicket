@@ -9,8 +9,13 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
 public class DataSeeder implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
     private final UserRepository userRepository;
     private final MovieRepository movieRepository;
@@ -68,18 +73,8 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedMovies() {
-        List<Movie> existing = movieRepository.findAll();
-        if (existing.stream().anyMatch(m -> !m.getId().startsWith("tmdb-")) || existing.size() < 20) {
-            try {
-                bookingRepository.deleteAll();
-                showSeatRepository.deleteAll();
-                showRepository.deleteAll();
-                movieRepository.deleteAll();
-            } catch (Exception e) {
-                System.err.println("Database cleanup warning: " + e.getMessage());
-            }
-        }
         if (movieRepository.count() == 0) {
+            log.info("Movie database empty. Starting initial seed...");
             tmdbService.syncPopularMovies();
         }
     }

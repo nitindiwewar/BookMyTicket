@@ -32,7 +32,14 @@ export default function Movies() {
       setRefreshing(true);
       let data = await getMovies();
       let list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
-      if (list.length < 20) {
+
+      if (list.length > 0) {
+        setMovies(list);
+        setRefreshing(false);
+        return;
+      }
+
+      if (list.length === 0) {
         const syncRes = await syncPopularTmdbMovies();
         if (syncRes?.data && Array.isArray(syncRes.data) && syncRes.data.length > 0) {
           list = syncRes.data;
@@ -40,8 +47,8 @@ export default function Movies() {
           data = await getMovies();
           list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
         }
+        setMovies(list);
       }
-      setMovies(list);
     } catch (err) {
       console.error("Failed to load movies list:", err);
     } finally {

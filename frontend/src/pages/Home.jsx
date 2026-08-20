@@ -139,8 +139,14 @@ export default function Home() {
       let data = await getMovies();
       let list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
 
-      if (list.length < 20) {
-        // Auto-seed dynamic TMDB movies via API if backend catalog count is low
+      if (list.length > 0) {
+        setMovies(list);
+        setLoading(false);
+        return;
+      }
+
+      // Only auto-seed if database is completely empty
+      if (list.length === 0) {
         const syncRes = await syncPopularTmdbMovies();
         if (syncRes?.data && Array.isArray(syncRes.data) && syncRes.data.length > 0) {
           list = syncRes.data;
@@ -148,8 +154,8 @@ export default function Home() {
           data = await getMovies();
           list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
         }
+        setMovies(list);
       }
-      setMovies(list);
     } catch (err) {
       console.error("Failed to load movies from API:", err);
     } finally {
