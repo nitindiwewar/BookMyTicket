@@ -147,6 +147,7 @@ public class AdminService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"movies", "movie-by-id"}, allEntries = true)
     public Movie createMovie(AdminDTO.CreateMovieRequest req) {
         String movieId = (req.getId() != null && !req.getId().trim().isEmpty()) 
                 ? req.getId().trim() 
@@ -173,6 +174,7 @@ public class AdminService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"movies", "movie-by-id"}, allEntries = true)
     public Movie updateMovie(String id, AdminDTO.CreateMovieRequest req) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found: " + id));
@@ -195,6 +197,7 @@ public class AdminService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"movies", "movie-by-id"}, allEntries = true)
     public void deleteMovie(String id) {
         if (!movieRepository.existsById(id)) {
             throw new ResourceNotFoundException("Movie not found: " + id);
@@ -208,6 +211,7 @@ public class AdminService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"theaters", "theaters-city"}, allEntries = true)
     public Theater createTheater(AdminDTO.CreateTheaterRequest req) {
         String theaterId = (req.getId() != null && !req.getId().trim().isEmpty())
                 ? req.getId().trim()
@@ -227,6 +231,7 @@ public class AdminService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"theaters", "theaters-city"}, allEntries = true)
     public Theater updateTheater(String id, AdminDTO.CreateTheaterRequest req) {
         Theater theater = theaterRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Theater not found: " + id));
@@ -242,6 +247,7 @@ public class AdminService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"theaters", "theaters-city"}, allEntries = true)
     public void deleteTheater(String id) {
         if (!theaterRepository.existsById(id)) {
             throw new ResourceNotFoundException("Theater not found: " + id);

@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "theaters")
+@Table(name = "theaters", indexes = {
+    @Index(name = "idx_theaters_city", columnList = "city")
+})
 public class Theater {
 
     @Id

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Star, Clock, Bookmark, Heart, Check, Sparkles } from "lucide-react";
@@ -19,7 +19,7 @@ export function trackRecentlyViewed(movieId) {
   }
 }
 
-export default function MovieCard({ movie, priority = false, titleColor = "default" }) {
+function MovieCard({ movie, priority = false, titleColor = "default" }) {
   const navigate = useNavigate();
   const posterPath = movie?.posterUrl || movie?.poster || movie?.hero?.poster || FALLBACK_POSTER;
   const [imgSrc, setImgSrc] = useState(posterPath);
@@ -128,4 +128,6 @@ export default function MovieCard({ movie, priority = false, titleColor = "defau
     </motion.div>
   );
 }
+
+export default memo(MovieCard);
 

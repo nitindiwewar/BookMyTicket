@@ -3,6 +3,8 @@ package com.movieticket.service;
 import com.movieticket.entity.*;
 import com.movieticket.exception.ResourceNotFoundException;
 import com.movieticket.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,7 +26,6 @@ public class TheaterService {
         this.showRepository = showRepository;
         this.showSeatRepository = showSeatRepository;
     }
-
 
     public void ensureShowsExist() {
         if (showRepository.count() == 0) {
@@ -60,6 +61,7 @@ public class TheaterService {
         }
     }
 
+    @CacheEvict(value = {"theaters", "theaters-city"}, allEntries = true)
     public void removeAllTheaters() {
         showSeatRepository.deleteAll();
         showRepository.deleteAll();
@@ -70,6 +72,7 @@ public class TheaterService {
         return getAllTheaters(null);
     }
 
+    @Cacheable(value = "theaters-city", key = "#city != null ? #city : 'all'")
     public List<Theater> getAllTheaters(String city) {
         ensureShowsExist();
 
@@ -133,6 +136,7 @@ public class TheaterService {
         return R * c;
     }
 
+    @Cacheable(value = "theaters", key = "#id")
     public Theater getTheaterById(String id) {
         return theaterRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Theater not found with id: " + id));

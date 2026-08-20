@@ -7,7 +7,11 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "movies")
+@Table(name = "movies", indexes = {
+    @Index(name = "idx_movies_language", columnList = "language"),
+    @Index(name = "idx_movies_rel_status", columnList = "releaseStatus"),
+    @Index(name = "idx_movies_rating", columnList = "rating")
+})
 public class Movie {
 
     @Id

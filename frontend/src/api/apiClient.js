@@ -24,53 +24,100 @@ function getApiUrl(endpoint) {
   return `${base}${cleanEndpoint}`;
 }
 
-export async function apiClient(endpoint, options = {}) {
-  const token = localStorage.getItem("movieticket-auth-token");
-  
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  };
+// In-memory cache & in-flight promise registry for ultra-fast response & zero duplicates
+const apiCache = new Map();
+const inFlightRequests = new Map();
+const CACHE_TTL_MS = 30000; // 30 seconds for static GET endpoints
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+export function clearApiCache() {
+  apiCache.clear();
+}
+
+export async function apiClient(endpoint, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const token = localStorage.getItem("movieticket-auth-token");
+  const isGet = method === "GET";
+  const cacheKey = `${endpoint}_${token || "anon"}`;
+
+  // Invalidate cache on mutations
+  if (!isGet) {
+    apiCache.clear();
+  } else if (!options.skipCache && apiCache.has(cacheKey)) {
+    const cached = apiCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+    apiCache.delete(cacheKey);
   }
 
-  const config = {
-    ...options,
-    headers,
-  };
+  // Deduplicate concurrent in-flight GET requests
+  if (isGet && inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey);
+  }
 
-  try {
-    const url = getApiUrl(endpoint);
-    const response = await fetch(url, config);
-    const text = await response.text();
-    let result = {};
-    if (text) {
-      try {
-        result = JSON.parse(text);
-      } catch {
-        if (response.status === 404) {
-          result = { message: "Backend API endpoint not found (404). Please ensure VITE_API_BASE_URL is configured." };
-        } else if (response.status === 502 || response.status === 503 || response.status === 504) {
-          result = { message: "Backend server is waking up or temporarily unavailable. Please retry in a few moments." };
-        } else {
-          result = { message: text.length > 150 ? `Request failed with status ${response.status}` : text };
+  const fetchPromise = (async () => {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const config = {
+      ...options,
+      headers,
+    };
+
+    try {
+      const url = getApiUrl(endpoint);
+      const response = await fetch(url, config);
+      const text = await response.text();
+      let result = {};
+      if (text) {
+        try {
+          result = JSON.parse(text);
+        } catch {
+          if (response.status === 404) {
+            result = { message: "Backend API endpoint not found (404). Please ensure VITE_API_BASE_URL is configured." };
+          } else if (response.status === 502 || response.status === 503 || response.status === 504) {
+            result = { message: "Backend server is waking up or temporarily unavailable. Please retry in a few moments." };
+          } else {
+            result = { message: text.length > 150 ? `Request failed with status ${response.status}` : text };
+          }
         }
       }
-    }
 
-    if (!response.ok) {
-      throw new Error(result.message || `Request failed with status ${response.status}`);
-    }
+      if (!response.ok) {
+        throw new Error(result.message || `Request failed with status ${response.status}`);
+      }
 
-    return result.data !== undefined ? result.data : result;
-  } catch (error) {
-    if (error.message === "Failed to fetch" || error.name === "TypeError") {
-      console.warn(`API Network Error [${endpoint}]:`, error.message);
-      throw new Error("Unable to connect to backend server. Please verify backend is live or check CORS.");
+      const finalData = result.data !== undefined ? result.data : result;
+
+      // Cache successful GET responses
+      if (isGet) {
+        apiCache.set(cacheKey, { timestamp: Date.now(), data: finalData });
+      }
+
+      return finalData;
+    } catch (error) {
+      if (error.message === "Failed to fetch" || error.name === "TypeError") {
+        console.warn(`API Network Error [${endpoint}]:`, error.message);
+        throw new Error("Unable to connect to backend server. Please verify backend is live or check CORS.");
+      }
+      console.warn(`API Error [${endpoint}]:`, error.message);
+      throw error;
+    } finally {
+      if (isGet) {
+        inFlightRequests.delete(cacheKey);
+      }
     }
-    console.warn(`API Error [${endpoint}]:`, error.message);
-    throw error;
+  })();
+
+  if (isGet) {
+    inFlightRequests.set(cacheKey, fetchPromise);
   }
+
+  return fetchPromise;
 }

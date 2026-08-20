@@ -7,7 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+    @Index(name = "idx_bookings_code", columnList = "bookingCode"),
+    @Index(name = "idx_bookings_user_id", columnList = "user_id"),
+    @Index(name = "idx_bookings_cust_email", columnList = "customerEmail"),
+    @Index(name = "idx_bookings_cust_phone", columnList = "customerPhone"),
+    @Index(name = "idx_bookings_show_id", columnList = "show_id"),
+    @Index(name = "idx_bookings_status", columnList = "status"),
+    @Index(name = "idx_bookings_created_at", columnList = "createdAt")
+})
 public class Booking {
 
     @Id

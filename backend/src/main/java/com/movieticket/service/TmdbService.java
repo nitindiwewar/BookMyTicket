@@ -248,6 +248,7 @@ public class TmdbService {
         return importMovieByTmdbId(tmdbId, releaseStatus, null);
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = {"movies", "movie-by-id"}, allEntries = true)
     public Movie importMovieByTmdbId(Long tmdbId, String releaseStatus, TmdbMovieSummary summary) {
         String movieId = "tmdb-" + tmdbId;
 
