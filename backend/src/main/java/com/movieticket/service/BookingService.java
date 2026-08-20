@@ -99,9 +99,20 @@ public class BookingService {
             }
         }
 
-        // Calculate Ticket Price
-        BigDecimal ticketPricePerSeat = show.getBasePrice() != null ? show.getBasePrice() : BigDecimal.valueOf(300);
-        BigDecimal ticketAmount = ticketPricePerSeat.multiply(BigDecimal.valueOf(requestedSeatNums.size()));
+        // Calculate Ticket Price based on exact seat tiers (Silver: 180, Gold: 250, Recliner: 450)
+        BigDecimal ticketAmount = BigDecimal.ZERO;
+        for (String seatNum : requestedSeatNums) {
+            char row = seatNum.charAt(0);
+            BigDecimal seatPrice;
+            if (row == 'A' || row == 'B' || row == 'C') {
+                seatPrice = BigDecimal.valueOf(180); // Silver Tier
+            } else if (row >= 'D' && row <= 'H') {
+                seatPrice = BigDecimal.valueOf(250); // Gold Tier
+            } else {
+                seatPrice = BigDecimal.valueOf(450); // Recliner Tier
+            }
+            ticketAmount = ticketAmount.add(seatPrice);
+        }
 
         // Calculate Snack Price
         BigDecimal snackAmount = BigDecimal.ZERO;

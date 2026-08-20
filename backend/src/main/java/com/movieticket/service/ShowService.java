@@ -141,19 +141,28 @@ public class ShowService {
         char[] rows = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 
         for (char r : rows) {
-            for (int col = 1; col <= 10; col++) {
+            for (int col = 1; col <= 14; col++) {
                 String seatNum = "" + r + col;
                 ShowSeat.SeatTier tier;
-                if (r == 'A' || r == 'B') tier = ShowSeat.SeatTier.VIP;
-                else if (r >= 'C' && r <= 'F') tier = ShowSeat.SeatTier.PREMIUM;
-                else tier = ShowSeat.SeatTier.REGULAR;
+                BigDecimal price;
+
+                if (r == 'A' || r == 'B' || r == 'C') {
+                    tier = ShowSeat.SeatTier.REGULAR; // Silver
+                    price = BigDecimal.valueOf(180);
+                } else if (r >= 'D' && r <= 'H') {
+                    tier = ShowSeat.SeatTier.PREMIUM; // Gold
+                    price = BigDecimal.valueOf(250);
+                } else {
+                    tier = ShowSeat.SeatTier.VIP; // Recliner
+                    price = BigDecimal.valueOf(450);
+                }
 
                 seats.add(ShowSeat.builder()
                         .show(show)
                         .seatNumber(seatNum)
                         .tier(tier)
                         .status(ShowSeat.SeatStatus.AVAILABLE)
-                        .price(show.getBasePrice() != null ? show.getBasePrice() : BigDecimal.valueOf(300))
+                        .price(price)
                         .build());
             }
         }

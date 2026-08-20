@@ -11,6 +11,7 @@ import { getMovieById } from "../api/movieApi.js";
 import { getTheaters, getShows } from "../api/theaterApi.js";
 import { useBooking } from "../state/bookingContext.jsx";
 import { useLocationCity } from "../state/locationContext.jsx";
+import { useToast } from "../state/toastContext.jsx";
 import { formatDuration } from "../utils/formatters.js";
 
 const THEATER_GPS = {
@@ -104,6 +105,7 @@ export default function Theaters() {
   const booking = useBooking();
   const navigate = useNavigate();
   const loc = useLocationCity();
+  const { showToast, showAlert } = useToast();
 
   const [movie, setMovie] = useState(null);
   const [theatersList, setTheatersList] = useState([]);
@@ -128,20 +130,30 @@ export default function Theaters() {
 
   const handleFetchGpsLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      showAlert({
+        title: "Geolocation Unavailable",
+        message: "Geolocation is not supported by your browser.",
+        type: "warning",
+      });
       return;
     }
     setGeoStatus("detecting");
+    showToast("Detecting your nearest theaters via GPS...", "info", 3000, "Locating");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setSortByNearest(true);
         setGeoStatus("done");
+        showToast("Theaters sorted by nearest GPS distance!", "success", 3500, "Location Found");
       },
       (err) => {
         console.warn("GPS error:", err);
         setGeoStatus("error");
-        alert("Unable to retrieve your location. Please check location permissions.");
+        showAlert({
+          title: "Location Permission Needed",
+          message: "Unable to retrieve your GPS location. Please allow browser location permissions to find nearby theaters.",
+          type: "error",
+        });
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );

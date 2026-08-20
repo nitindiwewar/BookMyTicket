@@ -18,6 +18,7 @@ import Card from "../components/ui/Card.jsx";
 import Badge from "../components/ui/Badge.jsx";
 import Input from "../components/ui/Input.jsx";
 import { useBooking } from "../state/bookingContext.jsx";
+import { useToast } from "../state/toastContext.jsx";
 import { formatCurrency } from "../utils/formatters.js";
 import { validateCouponApi } from "../api/couponApi.js";
 import { createBookingApi } from "../api/bookingApi.js";
@@ -70,6 +71,7 @@ function getTier(row) {
 export default function Payment() {
   const booking = useBooking();
   const navigate = useNavigate();
+  const { showAlert, showToast } = useToast();
 
   const show = booking.state.show || {};
   const movie = booking.state.movie || {};
@@ -100,15 +102,35 @@ export default function Payment() {
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }, [timeLeft]);
 
-  const ticketTotal = useMemo(() => {
+  const seatTierBreakdown = useMemo(() => {
     const customPrices = booking.state.seatPrices || {};
-    return booking.state.seats.reduce((sum, seatId) => {
+    const groups = {
+      Silver: { count: 0, seats: [], price: customPrices.Silver || SEAT_PRICES.Silver, total: 0 },
+      Gold: { count: 0, seats: [], price: customPrices.Gold || SEAT_PRICES.Gold, total: 0 },
+      Recliner: { count: 0, seats: [], price: customPrices.Recliner || SEAT_PRICES.Recliner, total: 0 },
+    };
+
+    booking.state.seats.forEach((seatId) => {
       const row = seatId.charAt(0);
       const tier = getTier(row);
-      const price = customPrices[tier] || SEAT_PRICES[tier];
-      return sum + price;
-    }, 0);
+      if (groups[tier]) {
+        groups[tier].count += 1;
+        groups[tier].seats.push(seatId);
+        groups[tier].total += groups[tier].price;
+      }
+    });
+
+    return Object.entries(groups)
+      .filter(([_, data]) => data.count > 0)
+      .map(([tier, data]) => ({
+        tier,
+        ...data,
+      }));
   }, [booking.state.seats, booking.state.seatPrices]);
+
+  const ticketTotal = useMemo(() => {
+    return seatTierBreakdown.reduce((sum, item) => sum + item.total, 0);
+  }, [seatTierBreakdown]);
 
   const snackTotal = useMemo(() => {
     return Object.entries(booking.state.snacks).reduce((sum, [key, count]) => {
@@ -200,8 +222,12 @@ export default function Payment() {
         navigate("/confirmation");
       } catch (err) {
         setIsProcessing(false);
-        console.warn("Backend booking request error:", err.message);
-        alert(err.message || "Booking failed: Selected seats are already booked. Please choose available seats.");
+        await showAlert({
+          title: "Booking Issue",
+          message: err.message || "Selected seats could not be confirmed. Please choose alternative available seats.",
+          type: "error",
+          confirmText: "Change Seats",
+        });
         const redirectMovieId = booking.state.movieId || "m1";
         const redirectShowId = booking.state.showId || "s-m1-t1-2026-07-29-1030";
         navigate(`/movies/${redirectMovieId}/seats/${redirectShowId}`);
@@ -479,13 +505,28 @@ export default function Payment() {
               </div>
             </div>
 
-            {/* Seats Breakdown */}
-            <div className="rounded-2xl bg-slate-50 p-3 text-xs space-y-1">
-              <div className="font-bold text-slate-700">
-                Seats ({booking.state.seats.length}):
+            {/* Seats Breakdown by Tier */}
+            <div className="rounded-2xl bg-slate-50 p-3.5 text-xs space-y-2 border border-slate-100">
+              <div className="flex items-center justify-between font-extrabold text-slate-800 border-b border-slate-200/60 pb-1.5">
+                <span>Selected Seats ({booking.state.seats.length})</span>
+                <span className="text-[#FF1744] font-black">{formatCurrency(ticketTotal)}</span>
               </div>
-              <div className="font-black text-red-600">
-                {booking.state.seats.join(", ")}
+
+              <div className="space-y-1.5">
+                {seatTierBreakdown.map((item) => (
+                  <div key={item.tier} className="flex items-center justify-between text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-2 w-2 rounded-full ${
+                        item.tier === "Recliner" ? "bg-amber-500" : item.tier === "Gold" ? "bg-cyan-500" : "bg-slate-400"
+                      }`} />
+                      <span className="font-bold text-slate-900">{item.tier}</span>
+                      <span className="text-[11px] text-slate-400 font-medium">
+                        ({item.seats.join(", ")}) • {item.count} x ₹{item.price}
+                      </span>
+                    </div>
+                    <span className="font-extrabold text-slate-900">{formatCurrency(item.total)}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -518,13 +559,22 @@ export default function Payment() {
 
             {/* Price Calculations */}
             <div className="space-y-2 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-600">
-              <div className="flex justify-between">
-                <span>Ticket Amount</span>
-                <span>{formatCurrency(ticketTotal)}</span>
+              <div className="space-y-1">
+                <div className="flex justify-between font-bold text-slate-800">
+                  <span>Ticket Amount ({booking.state.seats.length} seats)</span>
+                  <span>{formatCurrency(ticketTotal)}</span>
+                </div>
+                {seatTierBreakdown.map((item) => (
+                  <div key={item.tier} className="flex justify-between text-[11px] text-slate-400 pl-2">
+                    <span>• {item.tier} ({item.count} seat{item.count > 1 ? "s" : ""} @ ₹{item.price})</span>
+                    <span>{formatCurrency(item.total)}</span>
+                  </div>
+                ))}
               </div>
+
               {snackTotal > 0 && (
                 <div className="flex justify-between">
-                  <span>Concessions</span>
+                  <span>Concessions (F&B)</span>
                   <span>{formatCurrency(snackTotal)}</span>
                 </div>
               )}

@@ -37,7 +37,7 @@ const NAV_MODULES = [
 
 export default function AdminDashboard() {
   const { userData, logout } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, showConfirm, showAlert } = useToast();
   const [activeModule, setActiveModule] = useState("overview");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -268,13 +268,24 @@ export default function AdminDashboard() {
 
   const handleDeleteUser = async (u) => {
     if (u.email === userData?.email) {
-      showToast("Safety Protection: You cannot delete your own admin account!", "error");
+      showAlert({
+        title: "Safety Protection",
+        message: "You cannot delete your own active administrator account!",
+        type: "error",
+      });
       return;
     }
-    if (!window.confirm(`Are you sure you want to delete user ${u.name}?`)) return;
+    const confirmed = await showConfirm({
+      title: "Delete User Account?",
+      message: `Are you sure you want to remove user "${u.name}" (${u.email}) from the database? This action cannot be undone.`,
+      type: "danger",
+      confirmText: "Yes, Delete User",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteAdminUserApi(u.id);
-      showToast("User deleted successfully", "success");
+      showToast(`User "${u.name}" deleted successfully`, "success");
       loadData();
     } catch (err) {
       showToast(err.message || "Failed to delete user", "error");
@@ -310,10 +321,17 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteMovie = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this movie?")) return;
+    const confirmed = await showConfirm({
+      title: "Delete Movie from Catalog?",
+      message: "Are you sure you want to remove this movie and all associated showtimes from the platform?",
+      type: "danger",
+      confirmText: "Yes, Delete Movie",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteAdminMovieApi(id);
-      showToast("Movie deleted", "success");
+      showToast("Movie removed from catalog", "success");
       loadData();
     } catch {
       showToast("Failed to delete movie", "error");
@@ -346,7 +364,14 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteTheater = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this theater?")) return;
+    const confirmed = await showConfirm({
+      title: "Delete Theater?",
+      message: "Are you sure you want to delete this cinema multiplex and its scheduled shows?",
+      type: "danger",
+      confirmText: "Yes, Delete Theater",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteAdminTheaterApi(id);
       showToast("Theater deleted", "success");
@@ -380,7 +405,14 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteShow = async (id) => {
-    if (!window.confirm("Are you sure you want to cancel this showtime?")) return;
+    const confirmed = await showConfirm({
+      title: "Cancel Showtime Slot?",
+      message: "Are you sure you want to cancel this scheduled showtime slot?",
+      type: "warning",
+      confirmText: "Cancel Showtime",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteAdminShowApi(id);
       showToast("Showtime cancelled", "success");
@@ -401,7 +433,14 @@ export default function AdminDashboard() {
   };
 
   const handleCancelBooking = async (id) => {
-    if (!window.confirm("Are you sure you want to cancel & mark refund for this booking?")) return;
+    const confirmed = await showConfirm({
+      title: "Cancel Booking & Refund?",
+      message: "Are you sure you want to mark this booking as CANCELLED and trigger a refund?",
+      type: "warning",
+      confirmText: "Yes, Cancel Booking",
+    });
+    if (!confirmed) return;
+
     try {
       await updateAdminBookingStatusApi(id, "CANCELLED");
       showToast("Booking marked as CANCELLED", "success");
@@ -415,7 +454,14 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteBookingRecord = async (id) => {
-    if (!window.confirm("Are you sure you want to permanently delete this booking record?")) return;
+    const confirmed = await showConfirm({
+      title: "Permanently Delete Invoice?",
+      message: "Are you sure you want to permanently delete this customer booking record from the database?",
+      type: "danger",
+      confirmText: "Permanently Delete",
+    });
+    if (!confirmed) return;
+
     try {
       await deleteAdminBookingApi(id);
       showToast("Booking record deleted", "success");

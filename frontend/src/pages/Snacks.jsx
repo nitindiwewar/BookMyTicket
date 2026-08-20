@@ -32,20 +32,43 @@ function getSnackPhoto(name) {
   return "https://images.unsplash.com/photo-1578849278619-e73505e9610f?w=300&auto=format&fit=crop";
 }
 
+const SEAT_PRICES = {
+  Silver: 180,
+  Gold: 250,
+  Recliner: 450,
+};
+
+function getTier(row) {
+  if (["A", "B", "C"].includes(row)) return "Silver";
+  if (["D", "E", "F", "G", "H"].includes(row)) return "Gold";
+  return "Recliner";
+}
+
 export default function Snacks() {
   const { id: urlMovieId } = useParams();
   const booking = useBooking();
   const navigate = useNavigate();
   const [snacks, setSnacks] = useState([]);
 
-  const movieId = urlMovieId || booking.state.movie?.id || booking.state.movieId;
-  const paymentPath = movieId ? `/movies/${movieId}/payment` : "/payment";
-
   useEffect(() => {
-    getSnacks().then((list) => {
-      if (Array.isArray(list)) setSnacks(list);
-    });
+    getSnacks().then((data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setSnacks(data);
+      }
+    }).catch(() => {});
   }, []);
+
+  const targetMovieId = urlMovieId || booking.state.movieId;
+  const paymentPath = targetMovieId ? `/movies/${targetMovieId}/payment` : "/payment";
+
+  const ticketTotal = useMemo(() => {
+    const customPrices = booking.state.seatPrices || {};
+    return (booking.state.seats || []).reduce((sum, seatId) => {
+      const row = seatId.charAt(0);
+      const tier = getTier(row);
+      return sum + (customPrices[tier] || SEAT_PRICES[tier]);
+    }, 0);
+  }, [booking.state.seats, booking.state.seatPrices]);
 
   const summary = useMemo(() => {
     let items = 0;
@@ -152,13 +175,24 @@ export default function Snacks() {
 
             <div className="space-y-2.5 text-xs text-slate-600 font-medium">
               <div className="flex items-center justify-between">
-                <span>Selected Items</span>
-                <span className="font-extrabold text-slate-900">{summary.items}</span>
+                <span>Reserved Seats ({booking.state.seats.length})</span>
+                <span className="font-extrabold text-slate-900">₹{ticketTotal}</span>
+              </div>
+
+              {booking.state.seats.length > 0 && (
+                <div className="text-[11px] text-slate-400 font-semibold truncate">
+                  {booking.state.seats.map((s) => `${s} (${getTier(s.charAt(0))})`).join(", ")}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+                <span>Selected F&B Items</span>
+                <span className="font-extrabold text-slate-900">{summary.items} ({summary.total ? `₹${summary.total}` : "₹0"})</span>
               </div>
 
               <div className="border-t border-slate-100 pt-3 flex items-center justify-between text-base font-black text-slate-900">
-                <span>Snack Total</span>
-                <span className="text-[#FF1744]">₹{summary.total}</span>
+                <span>Running Subtotal</span>
+                <span className="text-[#FF1744]">₹{ticketTotal + summary.total}</span>
               </div>
             </div>
           </div>

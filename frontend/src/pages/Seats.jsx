@@ -150,6 +150,31 @@ export default function Seats() {
 
   const selectedSeats = booking.state.seats || [];
 
+  const seatTierBreakdown = useMemo(() => {
+    const groups = {
+      Silver: { count: 0, seats: [], price: seatPrices?.Silver || SEAT_PRICES.Silver, total: 0 },
+      Gold: { count: 0, seats: [], price: seatPrices?.Gold || SEAT_PRICES.Gold, total: 0 },
+      Recliner: { count: 0, seats: [], price: seatPrices?.Recliner || SEAT_PRICES.Recliner, total: 0 },
+    };
+
+    selectedSeats.forEach((seatId) => {
+      const row = seatId.charAt(0);
+      const tier = getTier(row);
+      if (groups[tier]) {
+        groups[tier].count += 1;
+        groups[tier].seats.push(seatId);
+        groups[tier].total += groups[tier].price;
+      }
+    });
+
+    return Object.entries(groups)
+      .filter(([_, data]) => data.count > 0)
+      .map(([tier, data]) => ({
+        tier,
+        ...data,
+      }));
+  }, [selectedSeats, seatPrices]);
+
   const totalAmount = useMemo(() => {
     return selectedSeats.reduce((sum, seatId) => {
       const row = seatId.charAt(0);
@@ -386,12 +411,24 @@ export default function Seats() {
                   ))}
                 </div>
 
-                <div className="space-y-2 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-600">
-                  <div className="flex justify-between">
+                <div className="space-y-2 border-t border-slate-100 pt-3 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
                     <span>Ticket Price ({selectedSeats.length} seats)</span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-black text-slate-900 text-sm">
                       {formatCurrency(totalAmount)}
                     </span>
+                  </div>
+
+                  {/* Tier-by-Tier Itemization */}
+                  <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    {seatTierBreakdown.map((item) => (
+                      <div key={item.tier} className="flex items-center justify-between text-[11px] text-slate-600">
+                        <span className="font-semibold">
+                          • {item.tier} ({item.count} seat{item.count > 1 ? "s" : ""} @ ₹{item.price})
+                        </span>
+                        <span className="font-black text-slate-900">{formatCurrency(item.total)}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

@@ -28,6 +28,7 @@ import { getMovieById, getMovies } from "../api/movieApi.js";
 import { getTheaters } from "../api/theaterApi.js";
 import { useBooking } from "../state/bookingContext.jsx";
 import { useLocationCity } from "../state/locationContext.jsx";
+import { useToast } from "../state/toastContext.jsx";
 const REAL_ACTOR_PHOTOS = {
   // Hollywood Stars
   "milly alcock": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop",
@@ -118,6 +119,7 @@ export default function MovieDetails() {
   const navigate = useNavigate();
   const booking = useBooking();
   const loc = useLocationCity();
+  const { showToast, showRatingModal } = useToast();
 
   const [movie, setMovie] = useState(null);
   const [moviesList, setMoviesList] = useState([]);
@@ -264,7 +266,15 @@ export default function MovieDetails() {
 
               <button
                 type="button"
-                onClick={() => alert("Thank you for submitting your rating!")}
+                onClick={async () => {
+                  const rating = await showRatingModal({
+                    title: `Rate ${movie.title}`,
+                    message: "How would you rate this movie? Select your stars below.",
+                  });
+                  if (rating) {
+                    showToast(`Thank you! You rated "${movie.title}" ${rating}/10 Stars!`, "success", 4000, "Rating Submitted");
+                  }
+                }}
                 className="rounded-lg bg-white/10 hover:bg-white/20 px-3 py-1 text-xs font-bold text-white border border-white/20 transition cursor-pointer"
               >
                 Rate now
