@@ -24,17 +24,26 @@ export default function Movies() {
   const [query, setQuery] = useState(q);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [tmdbModalOpen, setTmdbModalOpen] = useState(false);
-  const [movies, setMovies] = useState([]);
+  const [movies, setMovies] = useState(() => {
+    try {
+      const cached = localStorage.getItem("bmt_cached_movies");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [refreshing, setRefreshing] = useState(false);
 
   const loadMoviesList = async () => {
     try {
-      setRefreshing(true);
       let data = await getMovies();
       let list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
 
       if (list.length > 0) {
         setMovies(list);
+        try {
+          localStorage.setItem("bmt_cached_movies", JSON.stringify(list));
+        } catch {}
         setRefreshing(false);
         return;
       }
@@ -48,6 +57,9 @@ export default function Movies() {
           list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
         }
         setMovies(list);
+        try {
+          localStorage.setItem("bmt_cached_movies", JSON.stringify(list));
+        } catch {}
       }
     } catch (err) {
       console.error("Failed to load movies list:", err);

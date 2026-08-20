@@ -14,6 +14,10 @@ public class BookingRequestDTO {
     private List<String> seats;
 
     private String seatTier;
+    private String movieId;
+    private String theaterId;
+    private String showDate;
+    private String showTime;
     private Map<String, Integer> snacks;
     private String coupon;
     private String paymentMethod;
@@ -36,6 +40,18 @@ public class BookingRequestDTO {
 
     public String getSeatTier() { return seatTier; }
     public void setSeatTier(String seatTier) { this.seatTier = seatTier; }
+
+    public String getMovieId() { return movieId; }
+    public void setMovieId(String movieId) { this.movieId = movieId; }
+
+    public String getTheaterId() { return theaterId; }
+    public void setTheaterId(String theaterId) { this.theaterId = theaterId; }
+
+    public String getShowDate() { return showDate; }
+    public void setShowDate(String showDate) { this.showDate = showDate; }
+
+    public String getShowTime() { return showTime; }
+    public void setShowTime(String showTime) { this.showTime = showTime; }
 
     public Map<String, Integer> getSnacks() { return snacks; }
     public void setSnacks(Map<String, Integer> snacks) { this.snacks = snacks; }

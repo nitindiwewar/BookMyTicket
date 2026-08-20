@@ -162,9 +162,13 @@ export default function Payment() {
 
     const processFinalBooking = async (rzpDetails = {}) => {
       try {
-        const activeShowId = booking.state.showId || booking.state.show?.id || "s-m1-t1-2026-07-29-1030";
+        const activeShowId = booking.state.showId || booking.state.show?.id || `s-${booking.state.movieId || "m1"}-${booking.state.theaterId || "t1"}-${booking.state.date || "today"}-${booking.state.time?.replace(":", "") || "1930"}`;
         const payload = {
           showId: activeShowId,
+          movieId: movie?.id || booking.state.movieId,
+          theaterId: theater?.id || booking.state.theaterId,
+          showDate: booking.state.date || show?.date,
+          showTime: booking.state.time || show?.time,
           seats: booking.state.seats,
           seatTier: booking.state.seatTier || "Premium",
           snacks: booking.state.snacks,
@@ -183,6 +187,14 @@ export default function Payment() {
         const res = await createBookingApi(payload);
         if (res && booking.setBookingResponse) {
           booking.setBookingResponse(res);
+          if (res.movieTitle) {
+            booking.setMovie({
+              ...(movie || {}),
+              id: booking.state.movieId || movie?.id,
+              title: res.movieTitle,
+              posterUrl: res.moviePoster || movie?.posterUrl,
+            });
+          }
         }
         setIsProcessing(false);
         navigate("/confirmation");

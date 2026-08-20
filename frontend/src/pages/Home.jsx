@@ -130,17 +130,34 @@ export default function Home() {
   const booking = useBooking();
   const navigate = useNavigate();
 
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [movies, setMovies] = useState(() => {
+    try {
+      const cached = localStorage.getItem("bmt_cached_movies");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem("bmt_cached_movies");
+      return !cached || JSON.parse(cached).length === 0;
+    } catch {
+      return true;
+    }
+  });
 
   const fetchMoviesFromApi = async () => {
-    setLoading(true);
     try {
       let data = await getMovies();
       let list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
 
       if (list.length > 0) {
         setMovies(list);
+        try {
+          localStorage.setItem("bmt_cached_movies", JSON.stringify(list));
+        } catch {}
         setLoading(false);
         return;
       }
@@ -155,6 +172,9 @@ export default function Home() {
           list = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
         }
         setMovies(list);
+        try {
+          localStorage.setItem("bmt_cached_movies", JSON.stringify(list));
+        } catch {}
       }
     } catch (err) {
       console.error("Failed to load movies from API:", err);

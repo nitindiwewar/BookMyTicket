@@ -44,18 +44,22 @@ export function BookingProvider({ children }) {
         setState((s) => ({ ...s, bookingResponse }));
       },
       setMovie(movieData) {
+        if (!movieData) return;
         const movieId = typeof movieData === "string" ? movieData : movieData?.id;
+        const isObject = typeof movieData === "object";
         setState((s) => ({
           ...s,
-          movie: typeof movieData === "object" ? movieData : s.movie,
+          movie: isObject ? movieData : (s.movie?.id === movieId ? s.movie : { id: movieId }),
           movieId,
         }));
       },
       setTheater(theaterContainer) {
+        if (!theaterContainer) return;
         const theaterId = typeof theaterContainer === "string" ? theaterContainer : theaterContainer?.id;
+        const isObject = typeof theaterContainer === "object";
         setState((s) => ({
           ...s,
-          theater: typeof theaterContainer === "object" ? theaterContainer : s.theater,
+          theater: isObject ? theaterContainer : (s.theater?.id === theaterId ? s.theater : { id: theaterId }),
           theaterId,
         }));
       },

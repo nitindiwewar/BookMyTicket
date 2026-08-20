@@ -23,10 +23,13 @@ export default function Confirmation() {
   const movie = booking.state.movie || {};
   const theater = booking.state.theater || {};
   const show = booking.state.show || {};
-  const date = booking.state.date || show.date || "Today";
-  const time = booking.state.time || show.time || "19:30";
-
   const backendBooking = booking.state.bookingResponse;
+
+  const movieTitle = (backendBooking?.movieTitle && backendBooking.movieTitle !== "Selected Movie") ? backendBooking.movieTitle : (movie.title || "Movie");
+  const theaterName = (backendBooking?.theaterName) ? backendBooking.theaterName : (theater.name || "Cinema Theater");
+  const date = backendBooking?.showDate || booking.state.date || show.date || "Today";
+  const time = backendBooking?.showTime || booking.state.time || show.time || "19:30";
+  const seatList = backendBooking?.seats?.length ? backendBooking.seats.join(", ") : (booking.state.seats.length ? booking.state.seats.join(", ") : "Standard Reserved Seats");
 
   const code = useMemo(() => {
     if (bookingId) return bookingId;
@@ -47,10 +50,7 @@ export default function Confirmation() {
       return;
     }
 
-    const movieTitle = movie.title || "Movie Show";
-    const theaterName = theater.name || "Cinema Theater";
-    const seatList = booking.state.seats.length ? booking.state.seats.join(", ") : "Standard Reserved Seats";
-    const paidAmount = formatCurrency(booking.state.totalPrice || backendBooking?.totalAmount || 0);
+    const paidAmount = formatCurrency(backendBooking?.totalAmount || booking.state.totalPrice || 0);
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -166,10 +166,10 @@ export default function Confirmation() {
 
             <div>
               <h2 className="text-2xl font-black text-slate-900">
-                {movie ? movie.title : "Movie Title"}
+                {movieTitle}
               </h2>
               <p className="text-xs text-slate-500 font-semibold mt-1">
-                {movie?.language} • {movie?.format ? (Array.isArray(movie.format) ? movie.format.join("/") : movie.format) : "2D"} • {movie?.certification || "U/A"}
+                {movie?.language || "Hindi"} • {movie?.format ? (Array.isArray(movie.format) ? movie.format.join("/") : movie.format) : "2D"} • {movie?.certification || "U/A"}
               </p>
             </div>
 
@@ -180,7 +180,7 @@ export default function Confirmation() {
                   <span>Cinema</span>
                 </div>
                 <div className="mt-1 font-bold text-slate-900 truncate">
-                  {theater ? theater.name : "Cinema Theater"}
+                  {theaterName}
                 </div>
               </div>
 
@@ -201,7 +201,7 @@ export default function Confirmation() {
                 <span>Reserved Seats</span>
               </div>
               <div className="font-bold text-slate-900">
-                {booking.state.seats.length ? booking.state.seats.join(", ") : "Standard Reserved Seats"}
+                {seatList}
               </div>
             </div>
 

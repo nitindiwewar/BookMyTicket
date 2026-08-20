@@ -58,41 +58,22 @@ export default function Seats() {
     if (booking.state.show && booking.state.show.id === showId) {
       return booking.state.show;
     }
-    if (booking.state.showId === showId) {
-      return {
-        id: showId,
-        movieId: booking.state.movieId,
-        theaterId: booking.state.theaterId,
-        date: booking.state.date || new Date().toISOString().slice(0, 10),
-        time: booking.state.time || "19:30",
-      };
-    }
-    if (showId?.startsWith("s-")) {
-      const parts = showId.split("-");
-      return {
-        id: showId,
-        movieId: parts[1] || "m1",
-        theaterId: parts[2] || "t1",
-        date: new Date().toISOString().slice(0, 10),
-        time: "19:30",
-      };
-    }
     return {
       id: showId || "s1",
-      movieId: booking.state.movieId || "m1",
-      theaterId: booking.state.theaterId || "t1",
-      date: new Date().toISOString().slice(0, 10),
-      time: "19:30",
+      movieId: urlMovieId || booking.state.movieId || "m1",
+      theaterId: booking.state.theaterId || booking.state.theater?.id || "t1",
+      date: booking.state.date || new Date().toISOString().slice(0, 10),
+      time: booking.state.time || "19:30",
     };
-  }, [booking.state, showId]);
+  }, [booking.state, showId, urlMovieId]);
 
-  const targetMovieId = urlMovieId || show.movieId || booking.state.movieId || "m1";
+  const targetMovieId = urlMovieId || booking.state.movieId || show.movieId || "m1";
 
   const [fetchedMovie, setFetchedMovie] = useState(null);
   const [fetchedTheater, setFetchedTheater] = useState(null);
 
   useEffect(() => {
-    if (!booking.state.movie?.title && targetMovieId) {
+    if (targetMovieId && (!booking.state.movie?.title || booking.state.movie?.id !== targetMovieId || booking.state.movie?.title === "Selected Movie")) {
       getMovieById(targetMovieId).then((data) => {
         if (data) {
           setFetchedMovie(data);
@@ -100,7 +81,7 @@ export default function Seats() {
         }
       }).catch(() => {});
     }
-    if (!booking.state.theater?.name) {
+    if (!booking.state.theater?.name || (show.theaterId && booking.state.theater?.id !== show.theaterId)) {
       getTheaters().then((list) => {
         if (Array.isArray(list) && list.length > 0) {
           const t = list.find((x) => x.id === show.theaterId) || list[0];

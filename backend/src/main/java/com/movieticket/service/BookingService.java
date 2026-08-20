@@ -57,8 +57,13 @@ public class BookingService {
             }
         }
 
-        Show show = showRepository.findById(request.getShowId())
-                .orElseThrow(() -> new ResourceNotFoundException("Show not found with ID: " + request.getShowId()));
+        Show show = showService.getOrCreateShow(
+                request.getShowId(),
+                request.getMovieId(),
+                request.getTheaterId(),
+                request.getShowDate(),
+                request.getShowTime()
+        );
 
 
         User user = null;

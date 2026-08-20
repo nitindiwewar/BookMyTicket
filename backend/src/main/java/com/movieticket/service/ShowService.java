@@ -44,42 +44,78 @@ public class ShowService {
         return showRepository.findByMovieId(movieId);
     }
 
-    public Show getShowById(String id) {
-        return showRepository.findById(id).orElseGet(() -> {
-            Theater theater = null;
-            Movie movie = null;
+    public Show getOrCreateShow(String showId, String movieId, String theaterId, String showDateStr, String showTime) {
+        if (showId != null && !showId.trim().isEmpty()) {
+            java.util.Optional<Show> existing = showRepository.findById(showId.trim());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
 
-            if (id != null && id.contains("-")) {
-                String[] parts = id.split("-");
-                for (int i = 0; i < parts.length - 1; i++) {
-                    String candidateId = parts[i] + "-" + parts[i + 1];
-                    Theater found = theaterRepository.findById(candidateId).orElse(null);
-                    if (found != null) {
-                        theater = found;
+        Movie movie = null;
+        if (movieId != null && !movieId.trim().isEmpty()) {
+            movie = movieRepository.findById(movieId.trim()).orElse(null);
+        }
+
+        Theater theater = null;
+        if (theaterId != null && !theaterId.trim().isEmpty()) {
+            theater = theaterRepository.findById(theaterId.trim()).orElse(null);
+        }
+
+        LocalDate date = LocalDate.now();
+        if (showDateStr != null && !showDateStr.trim().isEmpty()) {
+            try {
+                date = LocalDate.parse(showDateStr.trim());
+            } catch (Exception ignored) {}
+        }
+
+        String time = (showTime != null && !showTime.trim().isEmpty()) ? showTime.trim() : "19:30";
+
+        // Try extracting movie or theater from showId if still unresolved
+        if (showId != null) {
+            if (movie == null) {
+                for (Movie m : movieRepository.findAll()) {
+                    if (showId.contains(m.getId())) {
+                        movie = m;
                         break;
                     }
                 }
             }
-
             if (theater == null) {
-                theater = theaterRepository.findAll().stream().findFirst().orElse(null);
+                for (Theater t : theaterRepository.findAll()) {
+                    if (showId.contains(t.getId())) {
+                        theater = t;
+                        break;
+                    }
+                }
             }
+        }
 
-            if (movie == null) {
-                movie = movieRepository.findAll().stream().findFirst().orElse(null);
-            }
+        if (movie == null) {
+            movie = movieRepository.findAll().stream().findFirst().orElse(null);
+        }
+        if (theater == null) {
+            theater = theaterRepository.findAll().stream().findFirst().orElse(null);
+        }
 
-            Show newShow = Show.builder()
-                    .id(id)
-                    .movie(movie)
-                    .theater(theater)
-                    .date(LocalDate.now())
-                    .time("18:00")
-                    .basePrice(BigDecimal.valueOf(320))
-                    .build();
+        String finalShowId = (showId != null && !showId.trim().isEmpty())
+                ? showId.trim()
+                : "s-" + (movie != null ? movie.getId() : "m1") + "-" + (theater != null ? theater.getId() : "t1") + "-" + date + "-" + time.replace(":", "");
 
-            return showRepository.save(newShow);
-        });
+        Show newShow = Show.builder()
+                .id(finalShowId)
+                .movie(movie)
+                .theater(theater)
+                .date(date)
+                .time(time)
+                .basePrice(BigDecimal.valueOf(300))
+                .build();
+
+        return showRepository.save(newShow);
+    }
+
+    public Show getShowById(String id) {
+        return getOrCreateShow(id, null, null, null, null);
     }
 
     public List<ShowSeatDTO> getShowSeats(String showId) {

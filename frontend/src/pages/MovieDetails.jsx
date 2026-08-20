@@ -319,7 +319,7 @@ export default function MovieDetails() {
                 type="button"
                 onClick={() => {
                   trackRecentlyViewed(movie.id);
-                  booking.setMovie(movie.id);
+                  booking.setMovie(movie);
                   navigate(`/movies/${movie.id}/theaters`);
                 }}
                 className="inline-flex items-center gap-2.5 rounded-xl bg-[#FF1744] hover:bg-[#D50000] text-white px-8 py-3.5 text-sm sm:text-base font-extrabold shadow-lg shadow-red-500/30 transition transform active:scale-98 cursor-pointer"
@@ -382,7 +382,7 @@ export default function MovieDetails() {
                 variant="primary"
                 onClick={() => {
                   trackRecentlyViewed(movie.id);
-                  booking.setMovie(movie.id);
+                  booking.setMovie(movie);
                   navigate(`/movies/${movie.id}/theaters`);
                 }}
               >

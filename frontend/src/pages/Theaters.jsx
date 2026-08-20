@@ -216,14 +216,14 @@ export default function Theaters() {
   }, [showsList, theatersList, query, loc.city, userCoords, sortByNearest]);
 
   const handleSelectShow = (theater, show) => {
-    const movieData = movie || { id: id || "m1", title: "Selected Movie" };
-    booking.setMovie(movieData);
+    const activeMovie = movie || booking.state.movie || { id: id || "m1", title: "Movie" };
+    booking.setMovie(activeMovie);
     booking.setTheater(theater);
     booking.setShow(show);
     booking.setDate(selectedDate);
     booking.setTime(show.time);
 
-    navigate(`/movies/${id || movieData.id}/seats/${show.id}`);
+    navigate(`/movies/${id || activeMovie.id}/seats/${show.id}`);
   };
 
   return (
@@ -380,7 +380,15 @@ export default function Theaters() {
                   ) : (
                     // Default fallback showtimes if database has none for this specific theater
                     ["10:30", "14:15", "18:00", "21:30"].map((t, idx) => {
-                      const mockShow = { id: `s-${theater.id}-${t.replace(":", "")}`, time: t, basePrice: 300 };
+                      const targetMovieId = id || movie?.id || booking.state.movieId || "m1";
+                      const mockShow = { 
+                        id: `s-${targetMovieId}-${theater.id}-${selectedDate}-${t.replace(":", "")}`, 
+                        time: t, 
+                        date: selectedDate,
+                        movieId: targetMovieId,
+                        theaterId: theater.id,
+                        basePrice: 300 
+                      };
                       const isFast = idx % 2 === 1;
                       return (
                         <button
