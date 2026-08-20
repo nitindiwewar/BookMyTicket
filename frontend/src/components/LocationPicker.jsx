@@ -61,15 +61,15 @@ export default function LocationPicker({ compact = false }) {
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Select City Location"
-        className={`group inline-flex items-center gap-1.5 rounded-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer font-extrabold active:scale-95 touch-manipulation min-h-[36px] sm:min-h-[40px] ${
-          compact ? "px-3 py-1.5 text-xs" : "px-3.5 sm:px-4 py-2 text-xs sm:text-sm"
+        className={`group inline-flex items-center gap-1 xs:gap-1.5 rounded-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer font-extrabold active:scale-95 touch-manipulation min-h-[30px] sm:min-h-[36px] shrink-0 ${
+          compact ? "px-2 xs:px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs" : "px-3 sm:px-4 py-1.5 text-xs sm:text-sm"
         }`}
       >
-        <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#FF1744] transition-transform duration-300 group-hover:scale-110 shrink-0" />
-        <span className="max-w-[75px] xs:max-w-[110px] sm:max-w-[160px] truncate font-black text-slate-800">
-          {loc.status === "detecting" ? "Detecting..." : loc.city || "Select City"}
+        <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#FF1744] transition-transform duration-300 group-hover:scale-110 shrink-0" />
+        <span className="max-w-[50px] xs:max-w-[75px] sm:max-w-[140px] truncate font-black text-slate-800">
+          {loc.status === "detecting" ? "..." : loc.city || "City"}
         </span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#FF1744] transition-transform duration-200 group-hover:translate-y-0.5 shrink-0" />
+        <ChevronDown className="h-3 w-3 text-slate-400 group-hover:text-[#FF1744] transition-transform duration-200 group-hover:translate-y-0.5 shrink-0 hidden xs:inline-block" />
       </button>
 
       {/* Responsive Small Pop-Up Window */}
