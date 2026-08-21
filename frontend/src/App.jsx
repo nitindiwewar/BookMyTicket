@@ -1,10 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "./components/Footer.jsx";
 import Navbar from "./components/Navbar.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { Loader2 } from "lucide-react";
+import { apiClient } from "./api/apiClient.js";
 
 // Lazy load pages for optimal performance
 const Home = lazy(() => import("./pages/Home.jsx"));
@@ -50,6 +51,11 @@ function App() {
     "/verify-otp",
     "/complete-profile",
   ].includes(location.pathname) || isAdminPage;
+
+  // Pre-warm the backend on initial application load to eliminate cold-start delay
+  useEffect(() => {
+    apiClient("/movies/now-playing", { skipCache: true }).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-[var(--app-bg)] text-[var(--app-text)] transition-colors duration-300">

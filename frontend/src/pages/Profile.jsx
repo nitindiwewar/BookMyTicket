@@ -142,20 +142,30 @@ export default function Profile() {
       return;
     }
 
+    let isMounted = true;
     const fetchBookings = async () => {
       setLoading(true);
-      const email = userData?.email;
-      const phone = userData?.mobile;
-      let list = await getUserBookingsApi(email, phone);
-      if ((!list || !list.length) && isLoggedIn) {
-        list = await getMyBookingsApi();
+      try {
+        const email = userData?.email;
+        const phone = userData?.mobile;
+        const list = await getUserBookingsApi(email, phone);
+        if (isMounted) {
+          setUserBookings(list || []);
+        }
+      } catch (err) {
+        console.warn("Could not load bookings:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-      setUserBookings(list || []);
-      setLoading(false);
     };
 
     fetchBookings();
-  }, [isLoggedIn, navigate, userData, openLoginModal]);
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn, navigate, userData?.email, userData?.mobile, openLoginModal]);
 
   const profile = useMemo(
     () => ({
