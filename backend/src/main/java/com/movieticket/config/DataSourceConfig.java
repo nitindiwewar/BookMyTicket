@@ -36,6 +36,17 @@ public class DataSourceConfig {
         String finalUsername = username != null ? username.trim() : "";
         String finalPassword = password != null ? password.trim() : "";
 
+        // Guard against unexpanded placeholders passed from environment configs
+        if (jdbcUrl.startsWith("${") && jdbcUrl.endsWith("}")) {
+            jdbcUrl = "jdbc:mysql://localhost:3306/movieticket?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true";
+        }
+        if (finalUsername.startsWith("${") && finalUsername.endsWith("}")) {
+            finalUsername = "root";
+        }
+        if (finalPassword.startsWith("${") && finalPassword.endsWith("}")) {
+            finalPassword = "Nitin@2004";
+        }
+
         // Auto-normalize cloud URL format (e.g. mysql://user:pass@host:port/dbname?ssl-mode=REQUIRED)
         if (jdbcUrl.startsWith("mysql://")) {
             try {

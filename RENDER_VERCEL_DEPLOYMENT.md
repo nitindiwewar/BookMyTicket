@@ -29,18 +29,20 @@ Follow this step-by-step guide to deploy your **Movie Ticket Booking Application
    - **Instance Type**: `Free`
 5. Add **Environment Variables** under Environment tab:
 
-   | Key | Value |
-   | :--- | :--- |
-   | `SPRING_DATASOURCE_URL` | `jdbc:mysql://<HOST>:<PORT>/<DB_NAME>?useSSL=true` |
-   | `SPRING_DATASOURCE_USERNAME` | `<DB_USER>` |
-   | `SPRING_DATASOURCE_PASSWORD` | `<DB_PASSWORD>` |
-   | `SPRING_MAIL_USERNAME` | `nitindiwewar0@gmail.com` |
-   | `SPRING_MAIL_PASSWORD` | `hddygbsicnmqvuun` |
-   | `TMDB_API_KEY` | `e01d0966ebcead42f3a3bec84c24b41d` |
-   | `RAZORPAY_KEY_ID` | `rzp_test_TJJY5Q4lsHDjQL` |
-   | `RAZORPAY_KEY_SECRET` | `wcoypHqN2jd0V23A5y3dweV8` |
+   > ⚠️ **Important:** Do NOT type `${...}` or `<...>` in Render's Value box. Put your actual database credentials directly.
 
-6. Click **Create Web Service**. Render will automatically build the Docker container and provide your live Backend URL:
+   | Key | Example Value | Description |
+   | :--- | :--- | :--- |
+   | `SPRING_DATASOURCE_URL` | `jdbc:mysql://mysql-xxxx.aivencloud.com:12345/defaultdb?useSSL=true` | Your remote MySQL JDBC URL |
+   | `SPRING_DATASOURCE_USERNAME` | `avnadmin` | Your MySQL username |
+   | `SPRING_DATASOURCE_PASSWORD` | `your_db_password_here` | Your actual MySQL password (plain text) |
+   | `SPRING_MAIL_USERNAME` | `nitindiwewar0@gmail.com` | Gmail sender address |
+   | `SPRING_MAIL_PASSWORD` | `hddygbsicnmqvuun` | Gmail App Password (16 chars) |
+   | `TMDB_API_KEY` | `e01d0966ebcead42f3a3bec84c24b41d` | TMDB API Key |
+   | `RAZORPAY_KEY_ID` | `rzp_test_TJJY5Q4lsHDjQL` | Razorpay Key ID |
+   | `RAZORPAY_KEY_SECRET` | `wcoypHqN2jd0V23A5y3dweV8` | Razorpay Key Secret |
+
+6. Click **Create Web Service** (or **Manual Deploy -> Deploy latest commit**). Render will build and deploy your backend:
    `https://movie-ticket-backend.onrender.com`
 
 ---

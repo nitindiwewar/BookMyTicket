@@ -12,9 +12,9 @@ spring:
     name: movie-ticket-backend
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:mysql://localhost:3306/movieticket?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Nitin@2004
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -27,10 +27,10 @@ spring:
         format_sql: false
 
   mail:
-    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
-    port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME:nitindiwewar0@gmail.com}
-    password: ${SPRING_MAIL_PASSWORD:hddygbsicnmqvuun}
+    host: smtp.gmail.com
+    port: 587
+    username: nitindiwewar0@gmail.com
+    password: hddygbsicnmqvuun
     properties:
       mail:
         smtp:
@@ -48,14 +48,14 @@ app:
     allowed-origins: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
 
 tmdb:
-  api-key: ${TMDB_API_KEY:e01d0966ebcead42f3a3bec84c24b41d}
+  api-key: e01d0966ebcead42f3a3bec84c24b41d
   base-url: https://api.themoviedb.org/3
   image-base-url: https://image.tmdb.org/t/p
 
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID:rzp_test_TJJY5Q4lsHDjQL}
-  key-secret: ${RAZORPAY_KEY_SECRET:wcoypHqN2jd0V23A5y3dweV8}
+  key-id: rzp_test_TJJY5Q4lsHDjQL
+  key-secret: wcoypHqN2jd0V23A5y3dweV8
 
 sms:
   fast2sms:
-    api-key: ${FAST2SMS_API_KEY:gNDESxRv5IHj37KGeBFCdcuYXslOq4n8k1btUTVaM9frph6zLPlcdEiPUoNu5DxmJfXhpV8OegtBRkTS}
+    api-key: gNDESxRv5IHj37KGeBFCdcuYXslOq4n8k1btUTVaM9frph6zLPlcdEiPUoNu5DxmJfXhpV8OegtBRkTS
