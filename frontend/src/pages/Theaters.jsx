@@ -167,6 +167,8 @@ export default function Theaters() {
     for (const s of showsList) {
       const tId = s.theater?.id || s.theaterId;
       if (!tId) continue;
+      const showDate = s.date ? String(s.date).slice(0, 10) : selectedDate;
+      if (showDate && showDate !== selectedDate) continue;
       const arr = byTheater.get(tId) || [];
       arr.push(s);
       byTheater.set(tId, arr);
@@ -207,12 +209,25 @@ export default function Theaters() {
       const lat = t.latitude || (THEATER_GPS[t.name]?.lat) || 21.1458;
       const lng = t.longitude || (THEATER_GPS[t.name]?.lng) || 79.0882;
       const dist = userCoords ? calculateDistanceKm(userCoords.lat, userCoords.lng, lat, lng) : null;
+      
+      const rawShows = (byTheater.get(t.id) || []).sort((a, b) =>
+        (a.time || "").localeCompare(b.time || "")
+      );
+
+      // Deduplicate showtimes by time to avoid repeating pills
+      const uniqueShows = [];
+      const seenTimes = new Set();
+      for (const s of rawShows) {
+        if (s.time && !seenTimes.has(s.time)) {
+          seenTimes.add(s.time);
+          uniqueShows.push(s);
+        }
+      }
+
       return {
         theater: t,
         distanceKm: dist,
-        showList: (byTheater.get(t.id) || []).sort((a, b) =>
-          (a.time || "").localeCompare(b.time || "")
-        ),
+        showList: uniqueShows,
       };
     });
 

@@ -495,9 +495,9 @@ export default function AdminDashboard() {
   }, [bookings, searchQuery, filterStatus]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row">
-      {/* ================= LEFT SIDEBAR NAVIGATION ================= */}
-      <aside className="w-full md:w-64 bg-slate-950 text-white p-5 shrink-0 flex flex-col justify-between border-r border-slate-800">
+    <div className="min-h-screen md:h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row md:overflow-hidden">
+      {/* ================= LEFT SIDEBAR NAVIGATION (FIXED / STICKY) ================= */}
+      <aside className="w-full md:w-64 bg-slate-950 text-white p-5 shrink-0 flex flex-col justify-between border-r border-slate-800 md:h-screen md:sticky md:top-0 md:overflow-y-auto">
         <div className="space-y-6">
           <div className="flex items-center gap-3 px-1">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FF1744] text-white shadow-lg shadow-red-600/30">
@@ -552,8 +552,8 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ================= MAIN CONTENT CONTAINER ================= */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
+      {/* ================= MAIN CONTENT CONTAINER (INDEPENDENT SCROLL) ================= */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 md:h-screen md:overflow-y-auto">
         {/* TOP SYSTEM HEADER BAR */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs">
           <div>

@@ -23,6 +23,12 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:}")
+    private String configuredMailUsername;
+
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.password:}")
+    private String configuredMailPassword;
+
     private JavaMailSenderImpl etherealSender;
     private final SecureRandom random = new SecureRandom();
     private final Map<String, OtpEntry> otpCache = new ConcurrentHashMap<>();
@@ -89,12 +95,15 @@ public class EmailService {
     }
 
     private boolean trySendGmailSmtp(String username, String password, String targetEmail, String otpCode) {
+        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+            return false;
+        }
         try {
             JavaMailSenderImpl impl = new JavaMailSenderImpl();
             impl.setHost("smtp.gmail.com");
             impl.setPort(587);
-            impl.setUsername(username);
-            impl.setPassword(password);
+            impl.setUsername(username.trim());
+            impl.setPassword(password.trim());
 
             Properties props = impl.getJavaMailProperties();
             props.put("mail.transport.protocol", "smtp");
@@ -103,7 +112,7 @@ public class EmailService {
             props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(username);
+            message.setFrom(username.trim());
             message.setTo(targetEmail);
             message.setSubject("BookMySeat — Your Email Verification Code: " + otpCode);
             message.setText("Hello,\n\nYour 6-digit Email Verification OTP Code for BookMySeat is:\n\n" 
@@ -127,13 +136,37 @@ public class EmailService {
         String otpCode = String.valueOf(100000 + random.nextInt(900000));
         otpCache.put(normalizedEmail, new OtpEntry(otpCode, System.currentTimeMillis() + (10 * 60 * 1000)));
 
-        String[][] credentials = {
+        // 1. Try sending via configured environment variable credentials first
+        if (configuredMailUsername != null && !configuredMailUsername.trim().isEmpty() &&
+            configuredMailPassword != null && !configuredMailPassword.trim().isEmpty()) {
+            if (trySendGmailSmtp(configuredMailUsername, configuredMailPassword, normalizedEmail, otpCode)) {
+                return "Verification OTP code sent to " + normalizedEmail;
+            }
+        }
+
+        // 2. Try sending via autowired JavaMailSender if available
+        if (mailSender != null) {
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setTo(normalizedEmail);
+                message.setSubject("BookMySeat — Your Email Verification Code: " + otpCode);
+                message.setText("Hello,\n\nYour 6-digit Email Verification OTP Code for BookMySeat is:\n\n" 
+                        + otpCode + "\n\nThis OTP is valid for 10 minutes.\n\nRegards,\nBookMySeat Team");
+                mailSender.send(message);
+                return "Verification OTP code sent to " + normalizedEmail;
+            } catch (Exception e) {
+                System.err.println(">>> [AUTOWIRED MAILSENDER FAILED]: " + e.getMessage());
+            }
+        }
+
+        // 3. Fallback credentials if configured ones were unavailable or failed
+        String[][] fallbackCredentials = {
             {"nitindiwewar0@gmail.com", "hddygbsicnmqvuun"},
             {"nitindiwewar0@gmail.com", "hddy gbsi cnmq vuun"},
             {"nitindiwewar@gmail.com", "hddygbsicnmqvuun"}
         };
 
-        for (String[] creds : credentials) {
+        for (String[] creds : fallbackCredentials) {
             if (trySendGmailSmtp(creds[0], creds[1], normalizedEmail, otpCode)) {
                 return "Verification OTP code sent to " + normalizedEmail;
             }

@@ -40,6 +40,33 @@ public class ShowService {
             if (!list.isEmpty()) {
                 return list;
             }
+
+            // If no shows exist for this specific date, auto-generate them for this date
+            List<Theater> theaters = theaterRepository.findAll();
+            Movie movie = movieRepository.findById(movieId).orElse(null);
+            if (movie != null && !theaters.isEmpty()) {
+                String[] times = {"11:00", "15:30", "19:15", "22:00"};
+                List<Show> generated = new ArrayList<>();
+                for (Theater t : theaters) {
+                    for (String tm : times) {
+                        String showId = "s-" + movie.getId() + "-" + t.getId() + "-" + date + "-" + tm.replace(":", "");
+                        if (!showRepository.existsById(showId)) {
+                            generated.add(Show.builder()
+                                    .id(showId)
+                                    .movie(movie)
+                                    .theater(t)
+                                    .date(date)
+                                    .time(tm)
+                                    .basePrice(BigDecimal.valueOf(320))
+                                    .build());
+                        }
+                    }
+                }
+                if (!generated.isEmpty()) {
+                    return showRepository.saveAll(generated);
+                }
+            }
+            return showRepository.findByMovieIdAndDate(movieId, date);
         }
         return showRepository.findByMovieId(movieId);
     }

@@ -34,15 +34,24 @@ services:
     container_name: movieticket-backend
     restart: always
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-movieticket}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Nitin@2004}
+      PORT: 8080
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-movieticket}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${MYSQL_ROOT_PASSWORD:-Nitin@2004}}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-nitindiwewar0@gmail.com}
       SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-hddygbsicnmqvuun}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      APP_JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-86400000}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
       TMDB_API_KEY: ${TMDB_API_KEY:-e01d0966ebcead42f3a3bec84c24b41d}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_TJJY5Q4lsHDjQL}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-wcoypHqN2jd0V23A5y3dweV8}
       FAST2SMS_API_KEY: ${FAST2SMS_API_KEY:-gNDESxRv5IHj37KGeBFCdcuYXslOq4n8k1btUTVaM9frph6zLPlcdEiPUoNu5DxmJfXhpV8OegtBRkTS}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
     ports:
       - "8080:8080"
     depends_on:
@@ -58,6 +67,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     container_name: movieticket-frontend
     restart: always
     ports:
